@@ -7,16 +7,13 @@ class IncidentRepository:
     @staticmethod
     def get_categories():
         connection = get_connection()
-
         try:
             cursor = connection.cursor()
-
             cursor.execute("""
                 SELECT CategoryId, Name, Description
                 FROM dbo.Categories
                 ORDER BY Name
             """)
-
             rows = cursor.fetchall()
 
             return [
@@ -27,7 +24,6 @@ class IncidentRepository:
                 }
                 for row in rows
             ]
-
         finally:
             connection.close()
 
@@ -41,20 +37,13 @@ class IncidentRepository:
         priority: str,
     ):
         connection = get_connection()
-
         try:
             cursor = connection.cursor()
-
             cursor.execute(
                 """
                 INSERT INTO dbo.Incidents (
-                    IncidentReference,
-                    UserId,
-                    CategoryId,
-                    Title,
-                    Description,
-                    Priority,
-                    Status
+                    IncidentReference, UserId, CategoryId,
+                    Title, Description, Priority, Status
                 )
                 OUTPUT INSERTED.IncidentId
                 VALUES (?, ?, ?, ?, ?, ?, 'Open')
@@ -68,42 +57,27 @@ class IncidentRepository:
                     priority,
                 ),
             )
-
             incident_id = cursor.fetchone()[0]
-
             connection.commit()
-
             return incident_id
-
         except Exception:
             connection.rollback()
             raise
-
         finally:
             connection.close()
 
     @staticmethod
     def get_by_reference(incident_reference: str):
         connection = get_connection()
-
         try:
             cursor = connection.cursor()
-
             cursor.execute(
                 """
                 SELECT
-                    i.IncidentId,
-                    i.IncidentReference,
-                    i.UserId,
-                    i.TechnicianId,
-                    i.CategoryId,
-                    c.Name AS CategoryName,
-                    i.Title,
-                    i.Description,
-                    i.Priority,
-                    i.Status,
-                    i.CreatedAt,
-                    i.ClosedAt
+                    i.IncidentId, i.IncidentReference, i.UserId,
+                    i.TechnicianId, i.CategoryId,
+                    c.Name AS CategoryName, i.Title, i.Description,
+                    i.Priority, i.Status, i.CreatedAt, i.ClosedAt
                 FROM dbo.Incidents AS i
                 INNER JOIN dbo.Categories AS c
                     ON i.CategoryId = c.CategoryId
@@ -111,7 +85,6 @@ class IncidentRepository:
                 """,
                 (incident_reference,),
             )
-
             row = cursor.fetchone()
 
             if row is None:
@@ -131,27 +104,20 @@ class IncidentRepository:
                 "created_at": row.CreatedAt,
                 "closed_at": row.ClosedAt,
             }
-
         finally:
             connection.close()
 
     @staticmethod
     def get_by_user(user_id: int):
         connection = get_connection()
-
         try:
             cursor = connection.cursor()
-
             cursor.execute(
                 """
                 SELECT
-                    i.IncidentId,
-                    i.IncidentReference,
-                    i.Title,
-                    c.Name AS CategoryName,
-                    i.Priority,
-                    i.Status,
-                    i.CreatedAt
+                    i.IncidentId, i.IncidentReference, i.Title,
+                    c.Name AS CategoryName, i.Priority,
+                    i.Status, i.CreatedAt
                 FROM dbo.Incidents AS i
                 INNER JOIN dbo.Categories AS c
                     ON i.CategoryId = c.CategoryId
@@ -160,7 +126,6 @@ class IncidentRepository:
                 """,
                 (user_id,),
             )
-
             rows = cursor.fetchall()
 
             return [
@@ -175,28 +140,19 @@ class IncidentRepository:
                 }
                 for row in rows
             ]
-
         finally:
             connection.close()
 
     @staticmethod
     def get_all():
         """Retrieve all incidents for administrative management."""
-
         connection = get_connection()
-
         try:
             cursor = connection.cursor()
-
             cursor.execute("""
                 SELECT
-                    i.IncidentId,
-                    i.IncidentReference,
-                    i.Title,
-                    i.Priority,
-                    i.Status,
-                    i.CreatedAt,
-                    i.TechnicianId,
+                    i.IncidentId, i.IncidentReference, i.Title,
+                    i.Priority, i.Status, i.CreatedAt, i.TechnicianId,
                     c.Name AS CategoryName,
                     reporter.FullName AS ReporterName,
                     technician.FullName AS TechnicianName
@@ -217,7 +173,6 @@ class IncidentRepository:
                     END,
                     i.CreatedAt DESC
             """)
-
             rows = cursor.fetchall()
 
             return [
@@ -235,9 +190,187 @@ class IncidentRepository:
                 }
                 for row in rows
             ]
+        finally:
+            connection.close()
+
+    @staticmethod
+    def _get_filtered_incidents(
+        scope_condition: str,
+        scope_parameters: tuple,
+        search_term: str = "",
+        status: str = "",
+        priority: str = "",
+        category_id: int | None = None,
+        include_reporter_search: bool = False,
+    ):
+        """Retrieve incidents using validated filters and a fixed access scope."""
+
+        connection = get_connection()
+
+        try:
+            cursor = connection.cursor()
+
+            conditions = [scope_condition]
+            parameters = list(scope_parameters)
+
+            if search_term:
+                search_pattern = f"%{search_term}%"
+
+                search_conditions = [
+                    "i.IncidentReference LIKE ?",
+                    "i.Title LIKE ?",
+                    "i.Description LIKE ?",
+                ]
+
+                parameters.extend([search_pattern] * 3)
+
+                if include_reporter_search:
+                    search_conditions.extend(
+                        [
+                            "reporter.FullName LIKE ?",
+                            "reporter.Email LIKE ?",
+                        ]
+                    )
+                    parameters.extend([search_pattern] * 2)
+
+                conditions.append("(" + " OR ".join(search_conditions) + ")")
+
+            if status:
+                conditions.append("i.Status = ?")
+                parameters.append(status)
+
+            if priority:
+                conditions.append("i.Priority = ?")
+                parameters.append(priority)
+
+            if category_id is not None:
+                conditions.append("i.CategoryId = ?")
+                parameters.append(category_id)
+
+            where_clause = " AND ".join(conditions)
+
+            query = f"""
+                SELECT
+                    i.IncidentId,
+                    i.IncidentReference,
+                    i.UserId,
+                    i.TechnicianId,
+                    i.CategoryId,
+                    i.Title,
+                    i.Description,
+                    i.Priority,
+                    i.Status,
+                    i.CreatedAt,
+                    c.Name AS CategoryName,
+                    reporter.FullName AS ReporterName,
+                    reporter.Email AS ReporterEmail,
+                    technician.FullName AS TechnicianName
+                FROM dbo.Incidents AS i
+                INNER JOIN dbo.Categories AS c
+                    ON i.CategoryId = c.CategoryId
+                INNER JOIN dbo.Users AS reporter
+                    ON i.UserId = reporter.UserId
+                LEFT JOIN dbo.Users AS technician
+                    ON i.TechnicianId = technician.UserId
+                WHERE {where_clause}
+                ORDER BY
+                    CASE
+                        WHEN i.Status = 'Reopened' THEN 1
+                        WHEN i.Status = 'Open' THEN 2
+                        WHEN i.Status = 'In Progress' THEN 3
+                        WHEN i.Status = 'Awaiting User Confirmation' THEN 4
+                        ELSE 5
+                    END,
+                    CASE
+                        WHEN i.Priority = 'High' THEN 1
+                        WHEN i.Priority = 'Medium' THEN 2
+                        ELSE 3
+                    END,
+                    i.CreatedAt DESC
+            """
+
+            cursor.execute(query, tuple(parameters))
+            rows = cursor.fetchall()
+
+            return [
+                {
+                    "incident_id": row.IncidentId,
+                    "incident_reference": row.IncidentReference,
+                    "user_id": row.UserId,
+                    "technician_id": row.TechnicianId,
+                    "category_id": row.CategoryId,
+                    "title": row.Title,
+                    "description": row.Description,
+                    "priority": row.Priority,
+                    "status": row.Status,
+                    "created_at": row.CreatedAt,
+                    "category_name": row.CategoryName,
+                    "reporter_name": row.ReporterName,
+                    "reporter_email": row.ReporterEmail,
+                    "technician_name": row.TechnicianName,
+                }
+                for row in rows
+            ]
 
         finally:
             connection.close()
+
+    @staticmethod
+    def search_all_incidents(
+        search_term: str = "",
+        status: str = "",
+        priority: str = "",
+        category_id: int | None = None,
+    ):
+        """Search all incidents for administrative users."""
+
+        return IncidentRepository._get_filtered_incidents(
+            scope_condition="1 = 1",
+            scope_parameters=(),
+            search_term=search_term,
+            status=status,
+            priority=priority,
+            category_id=category_id,
+            include_reporter_search=True,
+        )
+
+    @staticmethod
+    def search_user_incidents(
+        user_id: int,
+        search_term: str = "",
+        status: str = "",
+        priority: str = "",
+        category_id: int | None = None,
+    ):
+        """Search incidents belonging only to the specified reporting user."""
+
+        return IncidentRepository._get_filtered_incidents(
+            scope_condition="i.UserId = ?",
+            scope_parameters=(user_id,),
+            search_term=search_term,
+            status=status,
+            priority=priority,
+            category_id=category_id,
+        )
+
+    @staticmethod
+    def search_technician_incidents(
+        technician_id: int,
+        search_term: str = "",
+        status: str = "",
+        priority: str = "",
+        category_id: int | None = None,
+    ):
+        """Search incidents assigned only to the specified technician."""
+
+        return IncidentRepository._get_filtered_incidents(
+            scope_condition="i.TechnicianId = ?",
+            scope_parameters=(technician_id,),
+            search_term=search_term,
+            status=status,
+            priority=priority,
+            category_id=category_id,
+        )
 
     @staticmethod
     def assign_technician(
@@ -245,13 +378,10 @@ class IncidentRepository:
         technician_id: int,
         assigned_by_user_id: int,
     ):
-        """Assign or reassign a technician and record the action."""
-
+        """Assign or reassign a technician without changing incident status."""
         connection = get_connection()
-
         try:
             cursor = connection.cursor()
-
             cursor.execute(
                 """
                 SELECT Status, TechnicianId
@@ -260,7 +390,6 @@ class IncidentRepository:
                 """,
                 (incident_id,),
             )
-
             incident = cursor.fetchone()
 
             if incident is None:
@@ -282,7 +411,6 @@ class IncidentRepository:
                 """,
                 (technician_id,),
             )
-
             technician = cursor.fetchone()
 
             if technician is None:
@@ -304,30 +432,18 @@ class IncidentRepository:
                     """,
                     (previous_technician_id,),
                 )
-
                 previous_technician = cursor.fetchone()
 
                 if previous_technician:
                     previous_technician_name = previous_technician.FullName
 
-            new_status = current_status
-
-            if current_status in ("Open", "Reopened"):
-                new_status = "In Progress"
-
             cursor.execute(
                 """
                 UPDATE dbo.Incidents
-                SET
-                    TechnicianId = ?,
-                    Status = ?
+                SET TechnicianId = ?
                 WHERE IncidentId = ?
                 """,
-                (
-                    technician_id,
-                    new_status,
-                    incident_id,
-                ),
+                (technician_id, incident_id),
             )
 
             action = (
@@ -351,12 +467,8 @@ class IncidentRepository:
             cursor.execute(
                 """
                 INSERT INTO dbo.AuditLogs (
-                    IncidentId,
-                    UserId,
-                    Action,
-                    FromStatus,
-                    ToStatus,
-                    Details
+                    IncidentId, UserId, Action,
+                    FromStatus, ToStatus, Details
                 )
                 VALUES (?, ?, ?, ?, ?, ?)
                 """,
@@ -365,7 +477,7 @@ class IncidentRepository:
                     assigned_by_user_id,
                     action,
                     current_status,
-                    new_status,
+                    current_status,
                     details,
                 ),
             )
@@ -377,35 +489,125 @@ class IncidentRepository:
                 "technician_id": technician_id,
                 "technician_name": technician_name,
                 "previous_status": current_status,
-                "new_status": new_status,
+                "new_status": current_status,
                 "action": action,
             }
-
         except Exception:
             connection.rollback()
             raise
+        finally:
+            connection.close()
 
+    @staticmethod
+    def claim_incident(incident_id: int, technician_id: int):
+        """Allow an active technician to claim an unassigned incident."""
+        connection = get_connection()
+        try:
+            cursor = connection.cursor()
+
+            cursor.execute(
+                """
+                SELECT Status, TechnicianId
+                FROM dbo.Incidents WITH (UPDLOCK, HOLDLOCK)
+                WHERE IncidentId = ?
+                """,
+                (incident_id,),
+            )
+            incident = cursor.fetchone()
+
+            if incident is None:
+                raise ValueError("The selected incident does not exist.")
+
+            current_status = incident.Status
+
+            if current_status == "Closed":
+                raise ValueError("Closed incidents cannot be claimed.")
+
+            if incident.TechnicianId is not None:
+                raise ValueError(
+                    "This incident has already been assigned to a technician."
+                )
+
+            cursor.execute(
+                """
+                SELECT FullName
+                FROM dbo.Users
+                WHERE UserId = ?
+                  AND Role = 'Technician'
+                  AND IsActive = 1
+                """,
+                (technician_id,),
+            )
+            technician = cursor.fetchone()
+
+            if technician is None:
+                raise ValueError("Your technician account is invalid or inactive.")
+
+            cursor.execute(
+                """
+                UPDATE dbo.Incidents
+                SET TechnicianId = ?
+                WHERE IncidentId = ?
+                  AND TechnicianId IS NULL
+                  AND Status <> 'Closed'
+                """,
+                (technician_id, incident_id),
+            )
+
+            if cursor.rowcount != 1:
+                raise ValueError(
+                    "This incident could not be claimed. "
+                    "It may already have been claimed."
+                )
+
+            cursor.execute(
+                """
+                INSERT INTO dbo.AuditLogs (
+                    IncidentId, UserId, Action,
+                    FromStatus, ToStatus, Details
+                )
+                VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    incident_id,
+                    technician_id,
+                    "Technician Claimed",
+                    current_status,
+                    current_status,
+                    (
+                        f"Incident claimed by {technician.FullName} "
+                        f"(UserId: {technician_id})."
+                    ),
+                ),
+            )
+
+            connection.commit()
+
+            return {
+                "incident_id": incident_id,
+                "technician_id": technician_id,
+                "technician_name": technician.FullName,
+                "previous_status": current_status,
+                "new_status": current_status,
+                "action": "Technician Claimed",
+            }
+        except Exception:
+            connection.rollback()
+            raise
         finally:
             connection.close()
 
     @staticmethod
     def get_assigned_to_technician(technician_id: int):
         """Retrieve all incidents assigned to a specific technician."""
-
         connection = get_connection()
-
         try:
             cursor = connection.cursor()
-
             cursor.execute(
                 """
                 SELECT
-                    i.IncidentId,
-                    i.IncidentReference,
-                    i.Title,
-                    i.Priority,
-                    i.Status,
-                    i.CreatedAt,
+                    i.IncidentId, i.IncidentReference, i.Title,
+                    i.Priority, i.Status, i.CreatedAt,
                     c.Name AS CategoryName,
                     reporter.FullName AS ReporterName,
                     reporter.Email AS ReporterEmail
@@ -432,7 +634,6 @@ class IncidentRepository:
                 """,
                 (technician_id,),
             )
-
             rows = cursor.fetchall()
 
             return [
@@ -449,7 +650,6 @@ class IncidentRepository:
                 }
                 for row in rows
             ]
-
         finally:
             connection.close()
 
@@ -459,25 +659,15 @@ class IncidentRepository:
         technician_id: int,
     ):
         """Retrieve incident details only if assigned to this technician."""
-
         connection = get_connection()
-
         try:
             cursor = connection.cursor()
-
             cursor.execute(
                 """
                 SELECT
-                    i.IncidentId,
-                    i.IncidentReference,
-                    i.UserId,
-                    i.TechnicianId,
-                    i.Title,
-                    i.Description,
-                    i.Priority,
-                    i.Status,
-                    i.CreatedAt,
-                    i.ClosedAt,
+                    i.IncidentId, i.IncidentReference, i.UserId,
+                    i.TechnicianId, i.Title, i.Description,
+                    i.Priority, i.Status, i.CreatedAt, i.ClosedAt,
                     c.Name AS CategoryName,
                     reporter.FullName AS ReporterName,
                     reporter.Email AS ReporterEmail
@@ -491,7 +681,6 @@ class IncidentRepository:
                 """,
                 (incident_id, technician_id),
             )
-
             row = cursor.fetchone()
 
             if row is None:
@@ -512,7 +701,53 @@ class IncidentRepository:
                 "reporter_name": row.ReporterName,
                 "reporter_email": row.ReporterEmail,
             }
+        finally:
+            connection.close()
 
+    @staticmethod
+    def get_unassigned_incidents():
+        """Retrieve all non-closed incidents that have no assigned technician."""
+        connection = get_connection()
+        try:
+            cursor = connection.cursor()
+            cursor.execute("""
+                SELECT
+                    i.IncidentId, i.IncidentReference, i.Title,
+                    i.Priority, i.Status, i.CreatedAt,
+                    c.Name AS CategoryName,
+                    reporter.FullName AS ReporterName,
+                    reporter.Email AS ReporterEmail
+                FROM dbo.Incidents AS i
+                INNER JOIN dbo.Categories AS c
+                    ON i.CategoryId = c.CategoryId
+                INNER JOIN dbo.Users AS reporter
+                    ON i.UserId = reporter.UserId
+                WHERE i.TechnicianId IS NULL
+                  AND i.Status <> 'Closed'
+                ORDER BY
+                    CASE
+                        WHEN i.Priority = 'High' THEN 1
+                        WHEN i.Priority = 'Medium' THEN 2
+                        ELSE 3
+                    END,
+                    i.CreatedAt ASC
+                """)
+            rows = cursor.fetchall()
+
+            return [
+                {
+                    "incident_id": row.IncidentId,
+                    "incident_reference": row.IncidentReference,
+                    "title": row.Title,
+                    "priority": row.Priority,
+                    "status": row.Status,
+                    "created_at": row.CreatedAt,
+                    "category_name": row.CategoryName,
+                    "reporter_name": row.ReporterName,
+                    "reporter_email": row.ReporterEmail,
+                }
+                for row in rows
+            ]
         finally:
             connection.close()
 
@@ -523,12 +758,9 @@ class IncidentRepository:
         action_taken: str,
     ):
         """Save a troubleshooting action and record it in the audit log."""
-
         connection = get_connection()
-
         try:
             cursor = connection.cursor()
-
             cursor.execute(
                 """
                 SELECT Status
@@ -538,7 +770,6 @@ class IncidentRepository:
                 """,
                 (incident_id, technician_id),
             )
-
             incident = cursor.fetchone()
 
             if incident is None:
@@ -555,29 +786,20 @@ class IncidentRepository:
             cursor.execute(
                 """
                 INSERT INTO dbo.TroubleshootingRecords (
-                    IncidentId,
-                    TechnicianId,
-                    ActionTaken,
-                    CreatedAt
+                    IncidentId, TechnicianId, ActionTaken, CreatedAt
                 )
                 OUTPUT INSERTED.RecordId
                 VALUES (?, ?, ?, SYSUTCDATETIME())
                 """,
                 (incident_id, technician_id, action_taken),
             )
-
-            record = cursor.fetchone()
-            record_id = record.RecordId
+            record_id = cursor.fetchone().RecordId
 
             cursor.execute(
                 """
                 INSERT INTO dbo.AuditLogs (
-                    IncidentId,
-                    UserId,
-                    Action,
-                    FromStatus,
-                    ToStatus,
-                    Details
+                    IncidentId, UserId, Action,
+                    FromStatus, ToStatus, Details
                 )
                 VALUES (?, ?, ?, ?, ?, ?)
                 """,
@@ -592,33 +814,24 @@ class IncidentRepository:
             )
 
             connection.commit()
-
             return record_id
-
         except Exception:
             connection.rollback()
             raise
-
         finally:
             connection.close()
 
     @staticmethod
     def get_troubleshooting_records(incident_id: int):
         """Retrieve the investigation history for an incident."""
-
         connection = get_connection()
-
         try:
             cursor = connection.cursor()
-
             cursor.execute(
                 """
                 SELECT
-                    tr.RecordId,
-                    tr.IncidentId,
-                    tr.TechnicianId,
-                    tr.ActionTaken,
-                    tr.CreatedAt,
+                    tr.RecordId, tr.IncidentId, tr.TechnicianId,
+                    tr.ActionTaken, tr.CreatedAt,
                     u.FullName AS TechnicianName
                 FROM dbo.TroubleshootingRecords AS tr
                 INNER JOIN dbo.Users AS u
@@ -628,7 +841,6 @@ class IncidentRepository:
                 """,
                 (incident_id,),
             )
-
             rows = cursor.fetchall()
 
             return [
@@ -639,6 +851,56 @@ class IncidentRepository:
                     "action_taken": row.ActionTaken,
                     "created_at": row.CreatedAt,
                     "technician_name": row.TechnicianName,
+                }
+                for row in rows
+            ]
+        finally:
+            connection.close()
+
+    @staticmethod
+    def get_resolution_history(incident_id: int):
+        """Retrieve all proposed resolutions and user decisions for an incident."""
+        connection = get_connection()
+
+        try:
+            cursor = connection.cursor()
+
+            cursor.execute(
+                """
+                SELECT
+                    r.ResolutionId,
+                    r.IncidentId,
+                    r.TechnicianId,
+                    r.ResolutionText,
+                    r.SubmittedAt,
+                    technician.FullName AS TechnicianName,
+                    f.Decision,
+                    f.Comments,
+                    f.SubmittedAt AS DecisionDate
+                FROM dbo.Resolutions AS r
+                INNER JOIN dbo.Users AS technician
+                    ON r.TechnicianId = technician.UserId
+                LEFT JOIN dbo.UserFeedback AS f
+                    ON r.ResolutionId = f.ResolutionId
+                WHERE r.IncidentId = ?
+                ORDER BY r.SubmittedAt ASC, r.ResolutionId ASC
+                """,
+                (incident_id,),
+            )
+
+            rows = cursor.fetchall()
+
+            return [
+                {
+                    "resolution_id": row.ResolutionId,
+                    "incident_id": row.IncidentId,
+                    "technician_id": row.TechnicianId,
+                    "technician_name": row.TechnicianName,
+                    "resolution_text": row.ResolutionText,
+                    "submitted_at": row.SubmittedAt,
+                    "decision": row.Decision,
+                    "comments": row.Comments,
+                    "decision_date": row.DecisionDate,
                 }
                 for row in rows
             ]
@@ -653,19 +915,13 @@ class IncidentRepository:
         resolution_text: str,
     ):
         """Save a proposed resolution and move the incident to confirmation."""
-
         connection = get_connection()
-
         try:
             cursor = connection.cursor()
-
             cursor.execute(
                 """
                 SELECT
-                    i.Status,
-                    i.IncidentReference,
-                    i.Title,
-                    i.UserId,
+                    i.Status, i.IncidentReference, i.Title, i.UserId,
                     reporter.FullName AS ReporterName,
                     reporter.Email AS ReporterEmail
                 FROM dbo.Incidents AS i WITH (UPDLOCK, HOLDLOCK)
@@ -676,7 +932,6 @@ class IncidentRepository:
                 """,
                 (incident_id, technician_id),
             )
-
             incident = cursor.fetchone()
 
             if incident is None:
@@ -698,7 +953,6 @@ class IncidentRepository:
                 """,
                 (incident_id,),
             )
-
             troubleshooting_count = cursor.fetchone()[0]
 
             if troubleshooting_count == 0:
@@ -710,24 +964,19 @@ class IncidentRepository:
             cursor.execute(
                 """
                 INSERT INTO dbo.Resolutions (
-                    IncidentId,
-                    TechnicianId,
-                    ResolutionText,
-                    SubmittedAt
+                    IncidentId, TechnicianId, ResolutionText, SubmittedAt
                 )
                 OUTPUT INSERTED.ResolutionId
                 VALUES (?, ?, ?, SYSUTCDATETIME())
                 """,
                 (incident_id, technician_id, resolution_text),
             )
-
             resolution_id = cursor.fetchone().ResolutionId
 
             cursor.execute(
                 """
                 UPDATE dbo.Incidents
-                SET
-                    Status = 'Awaiting User Confirmation',
+                SET Status = 'Awaiting User Confirmation',
                     ClosedAt = NULL
                 WHERE IncidentId = ?
                 """,
@@ -737,12 +986,8 @@ class IncidentRepository:
             cursor.execute(
                 """
                 INSERT INTO dbo.AuditLogs (
-                    IncidentId,
-                    UserId,
-                    Action,
-                    FromStatus,
-                    ToStatus,
-                    Details
+                    IncidentId, UserId, Action,
+                    FromStatus, ToStatus, Details
                 )
                 VALUES (?, ?, ?, ?, ?, ?)
                 """,
@@ -768,11 +1013,9 @@ class IncidentRepository:
                 "reporter_email": incident.ReporterEmail,
                 "resolution_text": resolution_text,
             }
-
         except Exception:
             connection.rollback()
             raise
-
         finally:
             connection.close()
 
@@ -783,23 +1026,15 @@ class IncidentRepository:
         user_id: int,
     ):
         """Retrieve a pending resolution for its reporting user."""
-
         connection = get_connection()
-
         try:
             cursor = connection.cursor()
-
             cursor.execute(
                 """
                 SELECT
-                    r.ResolutionId,
-                    r.IncidentId,
-                    r.TechnicianId,
-                    r.ResolutionText,
-                    r.SubmittedAt,
-                    i.IncidentReference,
-                    i.Title,
-                    i.Status,
+                    r.ResolutionId, r.IncidentId, r.TechnicianId,
+                    r.ResolutionText, r.SubmittedAt,
+                    i.IncidentReference, i.Title, i.Status,
                     u.FullName AS ReporterName
                 FROM dbo.Resolutions AS r
                 INNER JOIN dbo.Incidents AS i
@@ -818,7 +1053,6 @@ class IncidentRepository:
                 """,
                 (resolution_id, incident_id, user_id),
             )
-
             row = cursor.fetchone()
 
             if row is None:
@@ -835,7 +1069,6 @@ class IncidentRepository:
                 "status": row.Status,
                 "reporter_name": row.ReporterName,
             }
-
         finally:
             connection.close()
 
@@ -848,17 +1081,12 @@ class IncidentRepository:
         comments: str,
     ):
         """Record the user's decision and update the incident."""
-
         connection = get_connection()
-
         try:
             cursor = connection.cursor()
-
             cursor.execute(
                 """
-                SELECT
-                    i.Status,
-                    i.IncidentReference
+                SELECT i.Status, i.IncidentReference
                 FROM dbo.Incidents AS i WITH (UPDLOCK, HOLDLOCK)
                 INNER JOIN dbo.Resolutions AS r
                     ON i.IncidentId = r.IncidentId
@@ -868,7 +1096,6 @@ class IncidentRepository:
                 """,
                 (incident_id, resolution_id, user_id),
             )
-
             incident = cursor.fetchone()
 
             if incident is None:
@@ -891,12 +1118,8 @@ class IncidentRepository:
             cursor.execute(
                 """
                 INSERT INTO dbo.UserFeedback (
-                    IncidentId,
-                    ResolutionId,
-                    UserId,
-                    Decision,
-                    Comments,
-                    SubmittedAt
+                    IncidentId, ResolutionId, UserId,
+                    Decision, Comments, SubmittedAt
                 )
                 VALUES (?, ?, ?, ?, ?, SYSUTCDATETIME())
                 """,
@@ -930,18 +1153,13 @@ class IncidentRepository:
                 if decision == "Accepted"
                 else "Resolution Rejected"
             )
-
             details = f"User {decision.lower()} the proposed resolution."
 
             cursor.execute(
                 """
                 INSERT INTO dbo.AuditLogs (
-                    IncidentId,
-                    UserId,
-                    Action,
-                    FromStatus,
-                    ToStatus,
-                    Details
+                    IncidentId, UserId, Action,
+                    FromStatus, ToStatus, Details
                 )
                 VALUES (?, ?, ?, ?, ?, ?)
                 """,
@@ -963,11 +1181,9 @@ class IncidentRepository:
                 "decision": decision,
                 "new_status": new_status,
             }
-
         except Exception:
             connection.rollback()
             raise
-
         finally:
             connection.close()
 
@@ -977,19 +1193,14 @@ class IncidentRepository:
         technician_id: int,
     ):
         """Retrieve the latest unreviewed resolution for an assigned incident."""
-
         connection = get_connection()
-
         try:
             cursor = connection.cursor()
-
             cursor.execute(
                 """
                 SELECT TOP 1
-                    r.ResolutionId,
-                    r.IncidentId,
-                    r.TechnicianId,
-                    r.SubmittedAt
+                    r.ResolutionId, r.IncidentId,
+                    r.TechnicianId, r.SubmittedAt
                 FROM dbo.Resolutions AS r
                 INNER JOIN dbo.Incidents AS i
                     ON r.IncidentId = i.IncidentId
@@ -1006,7 +1217,6 @@ class IncidentRepository:
                 """,
                 (incident_id, technician_id, technician_id),
             )
-
             row = cursor.fetchone()
 
             if row is None:
@@ -1018,7 +1228,6 @@ class IncidentRepository:
                 "technician_id": row.TechnicianId,
                 "submitted_at": row.SubmittedAt,
             }
-
         finally:
             connection.close()
 
@@ -1028,19 +1237,10 @@ class IncidentRepository:
         technician_id: int,
         resolution_id: int,
     ):
-        """
-        Retrieve an existing pending resolution for its assigned technician.
-
-        The resolution must belong to the incident, the incident must
-        still be assigned to this technician, and the user must not
-        have already accepted or rejected the resolution.
-        """
-
+        """Retrieve a pending resolution submitted by its assigned technician."""
         connection = get_connection()
-
         try:
             cursor = connection.cursor()
-
             cursor.execute(
                 """
                 SELECT
@@ -1060,6 +1260,7 @@ class IncidentRepository:
                 WHERE r.ResolutionId = ?
                   AND r.IncidentId = ?
                   AND i.TechnicianId = ?
+                  AND r.TechnicianId = ?
                   AND i.Status = 'Awaiting User Confirmation'
                   AND NOT EXISTS (
                       SELECT 1
@@ -1067,9 +1268,13 @@ class IncidentRepository:
                       WHERE f.ResolutionId = r.ResolutionId
                   )
                 """,
-                (resolution_id, incident_id, technician_id),
+                (
+                    resolution_id,
+                    incident_id,
+                    technician_id,
+                    technician_id,
+                ),
             )
-
             row = cursor.fetchone()
 
             if row is None:
@@ -1085,7 +1290,6 @@ class IncidentRepository:
                 "reporter_name": row.ReporterName,
                 "reporter_email": row.ReporterEmail,
             }
-
         finally:
             connection.close()
 
@@ -1095,15 +1299,8 @@ class IncidentRepository:
         technician_id: int,
         resolution_id: int,
     ):
-        """
-        Record a successfully resent resolution notification.
-
-        The incident and resolution are checked again before the
-        audit entry is written.
-        """
-
+        """Record a successfully resent resolution notification."""
         connection = get_connection()
-
         try:
             cursor = connection.cursor()
 
@@ -1135,20 +1332,26 @@ class IncidentRepository:
                 FROM dbo.Resolutions AS r
                 WHERE r.ResolutionId = ?
                   AND r.IncidentId = ?
+                  AND r.TechnicianId = ?
                   AND NOT EXISTS (
                       SELECT 1
                       FROM dbo.UserFeedback AS f
                       WHERE f.ResolutionId = r.ResolutionId
                   )
                 """,
-                (resolution_id, incident_id),
+                (
+                    resolution_id,
+                    incident_id,
+                    technician_id,
+                ),
             )
 
             resolution = cursor.fetchone()
 
             if resolution is None:
                 raise ValueError(
-                    "The resolution no longer exists or has already been reviewed."
+                    "The resolution does not belong to you, "
+                    "does not exist, or has already been reviewed."
                 )
 
             cursor.execute(
@@ -1174,6 +1377,7 @@ class IncidentRepository:
             )
 
             connection.commit()
+            return True
 
         except Exception:
             connection.rollback()

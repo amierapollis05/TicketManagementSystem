@@ -1,94 +1,221 @@
-﻿<!DOCTYPE html>
+﻿
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Technician Workspace - SupportDesk Pro</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">`r`n</head>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
 <body>
+
     {% include 'partials/navigation.html' %}
 
-    <h1>SupportDesk Pro</h1>
+    <main class="technician-container">
 
-    <h2>Technician Workspace</h2>
+        <header class="technician-header">
+            <p class="role-page-eyebrow">TECHNICIAN PORTAL</p>
+            <h1>Technician Workspace</h1>
+            <p>Welcome, <strong>{{ current_user.full_name }}</strong>.</p>
+            <p>Manage your assigned incidents and claim available work.</p>
+        </header>
 
-    <p>Welcome, {{ current_user.full_name }}.</p>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+                <div class="{{ category }}" role="alert">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endwith %}
 
-    <p>Manage and investigate your assigned incidents.</p>
+        <section class="technician-statistics-section">
+            <h2>Workload Overview</h2>
 
-    <hr>
+            <div class="technician-statistics">
 
-    <h3>Workload Overview</h3>
+                <article class="technician-stat-card">
+                    <h3>Total Assigned Incidents</h3>
+                    <p>{{ statistics.total }}</p>
+                </article>
 
-    <p>Total Assigned Incidents: {{ statistics.total }}</p>
+                <article class="technician-stat-card">
+                    <h3>Open</h3>
+                    <p>{{ statistics.open }}</p>
+                </article>
 
-    <p>Open: {{ statistics.open }}</p>
+                <article class="technician-stat-card">
+                    <h3>In Progress</h3>
+                    <p>{{ statistics.in_progress }}</p>
+                </article>
 
-    <p>In Progress: {{ statistics.in_progress }}</p>
+                <article class="technician-stat-card">
+                    <h3>Awaiting User Confirmation</h3>
+                    <p>{{ statistics.awaiting_confirmation }}</p>
+                </article>
 
-    <p>Awaiting User Confirmation: {{ statistics.awaiting_confirmation }}</p>
+                <article class="technician-stat-card">
+                    <h3>Reopened</h3>
+                    <p>{{ statistics.reopened }}</p>
+                </article>
 
-    <p>Reopened: {{ statistics.reopened }}</p>
+                <article class="technician-stat-card">
+                    <h3>Available to Claim</h3>
+                    <p>{{ statistics.unassigned }}</p>
+                </article>
 
-    <hr>
+            </div>
+        </section>
 
-    <h3>Recently Assigned Work</h3>
+        <section class="technician-list-section">
+            <div class="technician-section-heading">
+                <h2>Reopened Incidents</h2>
+                <p>These incidents require further investigation after a resolution was rejected.</p>
+            </div>
 
-    {% if incidents %}
+            {% if reopened_incidents %}
+                <div class="technician-table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Reference</th>
+                                <th>Title</th>
+                                <th>Category</th>
+                                <th>Priority</th>
+                                <th>Status</th>
+                                <th>Reporter</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for incident in reopened_incidents %}
+                                <tr>
+                                    <td>{{ incident.incident_reference }}</td>
+                                    <td>{{ incident.title }}</td>
+                                    <td>{{ incident.category_name }}</td>
+                                    <td>{{ incident.priority }}</td>
+                                    <td>{{ incident.status }}</td>
+                                    <td>{{ incident.reporter_name }}</td>
+                                    <td>
+                                        <a href="{{ url_for('technician.incident_details', incident_id=incident.incident_id) }}">
+                                            Investigate
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="technician-empty-state">
+                    <p>There are no reopened incidents assigned to you.</p>
+                </div>
+            {% endif %}
+        </section>
 
-        <table border="1" cellpadding="8">
-            <thead>
-                <tr>
-                    <th>Reference</th>
-                    <th>Title</th>
-                    <th>Category</th>
-                    <th>Priority</th>
-                    <th>Status</th>
-                    <th>Reporter</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
+        <section class="technician-list-section">
+            <div class="technician-section-heading">
+                <h2>My Active Incidents</h2>
+                <p>Incidents currently assigned to you.</p>
+            </div>
 
-            <tbody>
-                {% for incident in incidents %}
-                <tr>
-                    <td>{{ incident.incident_reference }}</td>
-                    <td>{{ incident.title }}</td>
-                    <td>{{ incident.category_name }}</td>
-                    <td>{{ incident.priority }}</td>
-                    <td>{{ incident.status }}</td>
-                    <td>{{ incident.reporter_name }}</td>
-                    <td>
-                        <a href="{{ url_for(
-                            'technician.incident_details',
-                            incident_id=incident.incident_id
-                        ) }}">
-                            View Incident
-                        </a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+            {% if my_active_incidents %}
+                <div class="technician-table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Reference</th>
+                                <th>Title</th>
+                                <th>Category</th>
+                                <th>Priority</th>
+                                <th>Status</th>
+                                <th>Reporter</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for incident in my_active_incidents %}
+                                <tr>
+                                    <td>{{ incident.incident_reference }}</td>
+                                    <td>{{ incident.title }}</td>
+                                    <td>{{ incident.category_name }}</td>
+                                    <td>{{ incident.priority }}</td>
+                                    <td>{{ incident.status }}</td>
+                                    <td>{{ incident.reporter_name }}</td>
+                                    <td>
+                                        <a href="{{ url_for('technician.incident_details', incident_id=incident.incident_id) }}">
+                                            View Incident
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="technician-empty-state">
+                    <p>You currently have no other assigned incidents.</p>
+                </div>
+            {% endif %}
+        </section>
 
-    {% else %}
+        <section class="technician-list-section">
+            <div class="technician-section-heading">
+                <h2>Unassigned Incidents</h2>
+                <p>These incidents have not yet been assigned to a technician. Claim an available incident to begin working on it.</p>
+            </div>
 
-        <p>You currently have no assigned incidents.</p>
+            {% if unassigned_incidents %}
+                <div class="technician-table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Reference</th>
+                                <th>Title</th>
+                                <th>Category</th>
+                                <th>Priority</th>
+                                <th>Status</th>
+                                <th>Reporter</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for incident in unassigned_incidents %}
+                                <tr>
+                                    <td>{{ incident.incident_reference }}</td>
+                                    <td>{{ incident.title }}</td>
+                                    <td>{{ incident.category_name }}</td>
+                                    <td>{{ incident.priority }}</td>
+                                    <td>{{ incident.status }}</td>
+                                    <td>{{ incident.reporter_name }}</td>
+                                    <td>
+                                        <form
+                                            method="POST"
+                                            class="technician-claim-form"
+                                            action="{{ url_for('technician.claim_incident', incident_id=incident.incident_id) }}"
+                                        >
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit">Claim Incident</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="technician-empty-state">
+                    <p>There are currently no unassigned incidents available.</p>
+                </div>
+            {% endif %}
+        </section>
 
-    {% endif %}
+        <div class="technician-footer-link">
+            <a class="button" href="{{ url_for('technician.incidents') }}">
+                View All My Assigned Incidents
+            </a>
+        </div>
 
-    <p>
-        <a href="{{ url_for('technician.incidents') }}">
-            View All Assigned Incidents
-        </a>
-    </p>
-
-    <form method="POST" action="{{ url_for('auth.logout') }}">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <button type="submit">Sign Out</button>
-    </form>
+    </main>
 
 </body>
 </html>
-
-

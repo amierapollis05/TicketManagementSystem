@@ -91,8 +91,100 @@ class IncidentService:
         return IncidentRepository.get_by_user(user_id)
 
     @staticmethod
-    def get_all_incidents():
-        return IncidentRepository.get_all()
+    def _validate_incident_filters(
+        search_term: str = "",
+        status: str = "",
+        priority: str = "",
+        category_id: int | None = None,
+    ):
+        """Validate incident search and filter inputs."""
+
+        valid_statuses = (
+            "Open",
+            "In Progress",
+            "Awaiting User Confirmation",
+            "Reopened",
+            "Closed",
+        )
+
+        if not isinstance(search_term, str):
+            raise ValueError("Invalid search term.")
+
+        search_term = search_term.strip()
+
+        if len(search_term) > 100:
+            raise ValueError("Search cannot exceed 100 characters.")
+
+        if status not in ("", *valid_statuses):
+            raise ValueError("Invalid incident status selected.")
+
+        if priority not in ("", *IncidentService.VALID_PRIORITIES):
+            raise ValueError("Invalid priority selected.")
+
+        if category_id is not None:
+            if not isinstance(category_id, int) or category_id <= 0:
+                raise ValueError("Invalid category selected.")
+
+            categories = IncidentRepository.get_categories()
+            valid_ids = {category["category_id"] for category in categories}
+
+            if category_id not in valid_ids:
+                raise ValueError("The selected category does not exist.")
+
+        return search_term
+
+    @staticmethod
+    def search_all_incidents(
+        search_term: str = "",
+        status: str = "",
+        priority: str = "",
+        category_id: int | None = None,
+    ):
+        search_term = IncidentService._validate_incident_filters(
+            search_term, status, priority, category_id
+        )
+
+        return IncidentRepository.search_all_incidents(
+            search_term, status, priority, category_id
+        )
+
+    @staticmethod
+    def search_user_incidents(
+        user_id: int,
+        search_term: str = "",
+        status: str = "",
+        priority: str = "",
+        category_id: int | None = None,
+    ):
+        if not isinstance(user_id, int) or user_id <= 0:
+            raise ValueError("Invalid user account.")
+
+        search_term = IncidentService._validate_incident_filters(
+            search_term, status, priority, category_id
+        )
+
+        return IncidentRepository.search_user_incidents(
+            user_id, search_term, status, priority, category_id
+        )
+
+    @staticmethod
+    def search_technician_incidents(
+        technician_id: int,
+        search_term: str = "",
+        status: str = "",
+        priority: str = "",
+        category_id: int | None = None,
+    ):
+        if not isinstance(technician_id, int) or technician_id <= 0:
+            raise ValueError("Invalid technician account.")
+
+        search_term = IncidentService._validate_incident_filters(
+            search_term, status, priority, category_id
+        )
+
+        return IncidentRepository.search_technician_incidents(
+            technician_id, search_term, status, priority, category_id
+        )
 
     @staticmethod
     def get_active_technicians():
@@ -122,6 +214,21 @@ class IncidentService:
         )
 
     @staticmethod
+    def claim_incident(incident_id: int, technician_id: int):
+        """Validate and claim an unassigned incident."""
+
+        if not isinstance(incident_id, int) or incident_id <= 0:
+            raise ValueError("Invalid incident selected.")
+
+        if not isinstance(technician_id, int) or technician_id <= 0:
+            raise ValueError("Invalid technician account.")
+
+        return IncidentRepository.claim_incident(
+            incident_id=incident_id,
+            technician_id=technician_id,
+        )
+
+    @staticmethod
     def get_technician_incidents(technician_id: int):
         """Retrieve incidents assigned to a technician."""
 
@@ -147,6 +254,11 @@ class IncidentService:
             incident_id=incident_id,
             technician_id=technician_id,
         )
+
+    @staticmethod
+    def get_unassigned_incidents():
+        """Retrieve incidents available for technicians to claim."""
+        return IncidentRepository.get_unassigned_incidents()
 
     @staticmethod
     def add_troubleshooting_record(
@@ -184,6 +296,15 @@ class IncidentService:
             raise ValueError("Invalid incident selected.")
 
         return IncidentRepository.get_troubleshooting_records(incident_id)
+
+    @staticmethod
+    def get_resolution_history(incident_id: int):
+        """Retrieve all resolution attempts and decisions for an incident."""
+
+        if not isinstance(incident_id, int) or incident_id <= 0:
+            raise ValueError("Invalid incident selected.")
+
+        return IncidentRepository.get_resolution_history(incident_id)
 
     @staticmethod
     def submit_resolution(

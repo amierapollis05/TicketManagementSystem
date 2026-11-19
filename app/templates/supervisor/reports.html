@@ -21,11 +21,17 @@
             color: #263238;
         }
 
-        header {
-            background: #172b4d;
-            color: white;
-            padding: 24px 5%;
-        }
+       header {
+    background: #ffffff;
+    color: #172b4d;
+    padding: 24px 5%;
+    border-bottom: 1px solid #dce3ed;
+}
+
+header h1,
+header h2 {
+    color: #172b4d;
+}
 
         header h1 {
             margin: 0 0 8px;
@@ -233,7 +239,7 @@
     background: #12652b;
 }
     </style>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">`r`n</head>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"></head>
 
 <body>
     {% include 'partials/navigation.html' %}

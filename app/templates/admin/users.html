@@ -13,11 +13,11 @@
         }
 
         body {
-            font-family: Arial, sans-serif;
-            margin: 30px;
-            background-color: #f5f6fa;
-            color: #202938;
-        }
+    font-family: Arial, sans-serif;
+    margin: 0;
+    background-color: #f1f4f9;
+    color: #26364d;
+}
 
         h1, h2 {
             color: #202938;
@@ -204,11 +204,12 @@
             }
         }
     </style>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">`r`n</head>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
 
 <body>
     {% include 'partials/navigation.html' %}
-
+<main class="role-page-container">
     <div class="page-header">
 
         <div>
@@ -544,7 +545,7 @@
         </table>
 
     </div>
-
+</main>
 </body>
 </html>
 

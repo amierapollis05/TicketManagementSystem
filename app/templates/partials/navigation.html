@@ -1,28 +1,76 @@
 
-<nav class="main-navigation">
+<nav class="main-navigation" aria-label="Main navigation">
+
     <a class="brand" href="{{ url_for('dashboard.index') }}">
-        SUPPORTDESK PRO
+        <span class="brand-mark">SD</span>
+        <span class="brand-name">SUPPORTDESK PRO</span>
     </a>
 
     <div class="nav-links">
 
         {% if current_user.role == 'User' %}
-            <a href="{{ url_for('dashboard.index') }}">Dashboard</a>
-            <a href="{{ url_for('incident.my_incidents') }}">My Incidents</a>
-            <a href="{{ url_for('incident.create') }}">Report Incident</a>
+
+            <a href="{{ url_for('dashboard.index') }}"
+               {% if request.endpoint == 'dashboard.index' %}class="active" aria-current="page"{% endif %}>
+                Dashboard
+            </a>
+
+            <a href="{{ url_for('incident.my_incidents') }}"
+               {% if request.endpoint == 'incident.my_incidents' %}class="active" aria-current="page"{% endif %}>
+                My Incidents
+            </a>
+
+            <a href="{{ url_for('incident.create') }}"
+               {% if request.endpoint == 'incident.create' %}class="active" aria-current="page"{% endif %}>
+                Report Incident
+            </a>
 
         {% elif current_user.role == 'Technician' %}
-            <a href="{{ url_for('technician.dashboard') }}">Dashboard</a>
-            <a href="{{ url_for('technician.incidents') }}">My Assigned Incidents</a>
+
+            <a href="{{ url_for('technician.dashboard') }}"
+               {% if request.endpoint in ['technician.dashboard', 'technician.details'] %}class="active" aria-current="page"{% endif %}>
+                Dashboard
+            </a>
+
+            <a href="{{ url_for('technician.incidents') }}"
+               {% if request.endpoint == 'technician.incidents' %}class="active" aria-current="page"{% endif %}>
+                Incident Queue
+            </a>
 
         {% elif current_user.role == 'Administrator' %}
-            <a href="{{ url_for('dashboard.index') }}">Dashboard</a>
-            <a href="{{ url_for('admin.incidents') }}">Manage Incidents</a>
-            <a href="{{ url_for('admin.users') }}">User Management</a>
+
+            <a href="{{ url_for('dashboard.index') }}"
+               {% if request.endpoint == 'dashboard.index' %}class="active" aria-current="page"{% endif %}>
+                Dashboard
+            </a>
+
+            <a href="{{ url_for('admin.incidents') }}"
+               {% if request.endpoint in ['admin.incidents', 'admin.assign_technician'] %}class="active" aria-current="page"{% endif %}>
+                Manage Incidents
+            </a>
+
+            <a href="{{ url_for('admin.users') }}"
+               {% if request.endpoint in ['admin.users', 'admin.create_user', 'admin.change_user_role', 'admin.change_user_status'] %}class="active" aria-current="page"{% endif %}>
+                User Management
+            </a>
+
+            <a href="{{ url_for('reporting.reports') }}"
+               {% if request.endpoint in ['reporting.reports', 'reporting.export_csv', 'reporting.export_pdf'] %}class="active" aria-current="page"{% endif %}>
+                Reports
+            </a>
 
         {% elif current_user.role == 'Supervisor' %}
-            <a href="{{ url_for('supervisor.dashboard') }}">Dashboard</a>
-            <a href="{{ url_for('reporting.reports') }}">Reports</a>
+
+            <a href="{{ url_for('supervisor.dashboard') }}"
+               {% if request.endpoint == 'supervisor.dashboard' %}class="active" aria-current="page"{% endif %}>
+                Dashboard
+            </a>
+
+            <a href="{{ url_for('reporting.reports') }}"
+               {% if request.endpoint in ['reporting.reports', 'reporting.export_csv', 'reporting.export_pdf'] %}class="active" aria-current="page"{% endif %}>
+                Reports
+            </a>
+
         {% endif %}
 
         <form method="POST"
@@ -36,6 +84,7 @@
             <button type="submit" class="logout-button">
                 Sign Out
             </button>
+
         </form>
 
     </div>

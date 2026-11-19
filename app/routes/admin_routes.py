@@ -21,15 +21,39 @@ admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
 @admin_bp.route("/incidents")
 @roles_required("Administrator")
 def incidents():
-    """Display all incidents for administrative management."""
+    """Display and filter all incidents for administrative management."""
 
-    all_incidents = IncidentService.get_all_incidents()
+    search_term = request.args.get("search", "").strip()
+    status = request.args.get("status", "").strip()
+    priority = request.args.get("priority", "").strip()
+    category_value = request.args.get("category_id", "").strip()
+
+    try:
+        category_id = int(category_value) if category_value else None
+
+        all_incidents = IncidentService.search_all_incidents(
+            search_term=search_term,
+            status=status,
+            priority=priority,
+            category_id=category_id,
+        )
+
+    except ValueError as error:
+        flash(str(error), "error")
+        return redirect(url_for("admin.incidents"))
+
     technicians = IncidentService.get_active_technicians()
+    categories = IncidentService.get_categories()
 
     return render_template(
         "admin/incidents.html",
         incidents=all_incidents,
         technicians=technicians,
+        categories=categories,
+        search_term=search_term,
+        selected_status=status,
+        selected_priority=priority,
+        selected_category_id=category_id,
     )
 
 

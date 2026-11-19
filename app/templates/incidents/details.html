@@ -5,61 +5,112 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Incident Details - SupportDesk Pro</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">`r`n</head>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
 <body>
+
     {% include 'partials/navigation.html' %}
 
     <h1>SupportDesk Pro</h1>
     <h2>Incident Details</h2>
 
-    <h3>{{ incident.title }}</h3>
+    <section class="panel">
+        <h3>{{ incident.title }}</h3>
 
-    <p>
-        <strong>Reference:</strong>
-        {{ incident.incident_reference }}
-    </p>
+        <p><strong>Reference:</strong> {{ incident.incident_reference }}</p>
+        <p><strong>Category:</strong> {{ incident.category_name }}</p>
+        <p><strong>Priority:</strong> {{ incident.priority }}</p>
+        <p><strong>Status:</strong> {{ incident.status }}</p>
+        <p>
+            <strong>Date Reported:</strong>
+            {{ incident.created_at.strftime('%d %B %Y at %H:%M') }}
+        </p>
 
-    <p>
-        <strong>Category:</strong>
-        {{ incident.category_name }}
-    </p>
+        <hr>
 
-    <p>
-        <strong>Priority:</strong>
-        {{ incident.priority }}
-    </p>
+        <h3>Incident Description</h3>
+        <p>{{ incident.description }}</p>
+    </section>
 
-    <p>
-        <strong>Status:</strong>
-        {{ incident.status }}
-    </p>
+    <section class="panel">
+        <h3>Investigation History</h3>
 
-    <p>
-        <strong>Date Reported:</strong>
-        {{ incident.created_at.strftime('%d %B %Y at %H:%M') }}
-    </p>
+        {% if troubleshooting_records %}
+            {% for record in troubleshooting_records %}
+                <div class="record">
+                    <p><strong>Technician:</strong> {{ record.technician_name }}</p>
+                    <p>{{ record.action_taken }}</p>
+                    <p class="record-date">
+                        {{ record.created_at.strftime('%d %B %Y at %H:%M') }}
+                    </p>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p>No troubleshooting actions have been recorded yet.</p>
+        {% endif %}
+    </section>
 
-    <hr>
+    <section class="panel">
+        <h3>Resolution History</h3>
 
-    <h3>Incident Description</h3>
+        {% if resolution_history %}
+            {% for resolution in resolution_history %}
+                <div class="record">
+                    <h4>Resolution {{ resolution.resolution_id }}</h4>
 
-    <p>{{ incident.description }}</p>
+                    <p>
+                        <strong>Submitted by:</strong>
+                        {{ resolution.technician_name }}
+                    </p>
 
-    <hr>
+                    <p>
+                        <strong>Submitted:</strong>
+                        {{ resolution.submitted_at.strftime('%d %B %Y at %H:%M') }}
+                    </p>
 
-    <h3>Resolution Information</h3>
+                    <p><strong>Proposed Resolution:</strong></p>
+                    <p>{{ resolution.resolution_text }}</p>
 
-    {% if incident.status == "Open" %}
-        <p>Your incident has been submitted and is awaiting assignment.</p>
-    {% elif incident.status == "In Progress" %}
-        <p>A technician is currently investigating your incident.</p>
-    {% elif incident.status == "Awaiting User Confirmation" %}
-        <p>A technician has submitted a proposed resolution. Your confirmation is required.</p>
-    {% elif incident.status == "Reopened" %}
-        <p>Your incident has been reopened for further investigation.</p>
-    {% elif incident.status == "Closed" %}
-        <p>Your incident has been completed and closed.</p>
-    {% endif %}
+                    <p>
+                        <strong>User Decision:</strong>
+                        {{ resolution.decision or 'Awaiting User Confirmation' }}
+                    </p>
+
+                    {% if resolution.comments %}
+                        <p>
+                            <strong>User Feedback:</strong>
+                            {{ resolution.comments }}
+                        </p>
+                    {% endif %}
+
+                    {% if resolution.decision_date %}
+                        <p>
+                            <strong>Decision Date:</strong>
+                            {{ resolution.decision_date.strftime('%d %B %Y at %H:%M') }}
+                        </p>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        {% else %}
+            <p>No resolutions have been submitted yet.</p>
+        {% endif %}
+    </section>
+
+    <section class="panel">
+        <h3>Current Incident Status</h3>
+
+        {% if incident.status == "Open" %}
+            <p>Your incident has been submitted and is awaiting assignment.</p>
+        {% elif incident.status == "In Progress" %}
+            <p>A technician is currently investigating your incident.</p>
+        {% elif incident.status == "Awaiting User Confirmation" %}
+            <p>A technician has submitted a proposed resolution. Your confirmation is required.</p>
+        {% elif incident.status == "Reopened" %}
+            <p>Your incident has been reopened for further investigation.</p>
+        {% elif incident.status == "Closed" %}
+            <p>Your incident has been completed and closed.</p>
+        {% endif %}
+    </section>
 
     <hr>
 
@@ -77,6 +128,3 @@
 
 </body>
 </html>
-
-
-

@@ -1,73 +1,187 @@
-﻿<!DOCTYPE html>
+﻿
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Assigned Incidents - SupportDesk Pro</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">`r`n</head>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
 <body>
+
     {% include 'partials/navigation.html' %}
 
-    <h1>SupportDesk Pro</h1>
+    <main class="technician-incidents-page">
 
-    <h2>My Assigned Incidents</h2>
+        <header class="technician-incidents-header">
+            <p class="role-page-eyebrow">TECHNICIAN PORTAL</p>
+            <h1>My Assigned Incidents</h1>
+            <p>View, search and manage incidents assigned to your technician account.</p>
+            <a class="technician-incidents-back" href="{{ url_for('technician.dashboard') }}">
+                Back to Workspace
+            </a>
+        </header>
 
-    <p>Incidents currently assigned to your technician account.</p>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+                <div class="technician-incidents-alert {{ category }}" role="alert">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endwith %}
 
-    <p>
-        <a href="{{ url_for('technician.dashboard') }}">
-            Back to Workspace
-        </a>
-    </p>
+        <section class="technician-incidents-search">
 
-    {% if incidents %}
+            <div class="technician-incidents-section-heading">
+                <h2>Search and Filter</h2>
+                <p>Find incidents using their reference, title, description or available filters.</p>
+            </div>
 
-        <table border="1" cellpadding="8">
-            <thead>
-                <tr>
-                    <th>Reference</th>
-                    <th>Title</th>
-                    <th>Category</th>
-                    <th>Priority</th>
-                    <th>Status</th>
-                    <th>Reporter</th>
-                    <th>Reporter Email</th>
-                    <th>Date Reported</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
+            <form method="GET" action="{{ url_for('technician.incidents') }}">
 
-            <tbody>
-                {% for incident in incidents %}
-                <tr>
-                    <td>{{ incident.incident_reference }}</td>
-                    <td>{{ incident.title }}</td>
-                    <td>{{ incident.category_name }}</td>
-                    <td>{{ incident.priority }}</td>
-                    <td>{{ incident.status }}</td>
-                    <td>{{ incident.reporter_name }}</td>
-                    <td>{{ incident.reporter_email }}</td>
-                    <td>{{ incident.created_at.strftime('%d %b %Y %H:%M') }}</td>
-                    <td>
-                        <a href="{{ url_for(
-                            'technician.incident_details',
-                            incident_id=incident.incident_id
-                        ) }}">
-                            Open
-                        </a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                <div class="technician-incidents-filter-grid">
 
-    {% else %}
+                    <div class="technician-incidents-field">
+                        <label for="search">Search incidents</label>
+                        <input
+                            type="search"
+                            id="search"
+                            name="search"
+                            value="{{ search_term }}"
+                            maxlength="100"
+                            placeholder="Reference, title or description"
+                        >
+                    </div>
 
-        <p>No incidents have been assigned to you yet.</p>
+                    <div class="technician-incidents-field">
+                        <label for="status">Status</label>
+                        <select id="status" name="status">
+                            <option value="">All statuses</option>
 
-    {% endif %}
+                            {% for option in [
+                                'Open',
+                                'In Progress',
+                                'Awaiting User Confirmation',
+                                'Reopened',
+                                'Closed'
+                            ] %}
+                                <option value="{{ option }}"
+                                    {% if selected_status == option %}selected{% endif %}>
+                                    {{ option }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="technician-incidents-field">
+                        <label for="priority">Priority</label>
+                        <select id="priority" name="priority">
+                            <option value="">All priorities</option>
+
+                            {% for option in ['Low', 'Medium', 'High'] %}
+                                <option value="{{ option }}"
+                                    {% if selected_priority == option %}selected{% endif %}>
+                                    {{ option }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="technician-incidents-field">
+                        <label for="category_id">Category</label>
+                        <select id="category_id" name="category_id">
+                            <option value="">All categories</option>
+
+                            {% for category in categories %}
+                                <option value="{{ category.category_id }}"
+                                    {% if selected_category_id == category.category_id %}selected{% endif %}>
+                                    {{ category.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                </div>
+
+                <div class="technician-incidents-filter-actions">
+                    <button type="submit">Apply Filters</button>
+                    <a href="{{ url_for('technician.incidents') }}">Clear Filters</a>
+                </div>
+
+            </form>
+        </section>
+
+        <section class="technician-incidents-results">
+
+            <div class="technician-incidents-results-heading">
+                <div>
+                    <h2>Assigned Incidents</h2>
+                    <p>Incidents currently assigned to you.</p>
+                </div>
+
+                <span class="technician-incidents-count">
+                    {{ incidents|length }} result(s)
+                </span>
+            </div>
+
+            {% if incidents %}
+
+                <div class="technician-incidents-table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Reference</th>
+                                <th>Title</th>
+                                <th>Category</th>
+                                <th>Priority</th>
+                                <th>Status</th>
+                                <th>Reporter</th>
+                                <th>Reporter Email</th>
+                                <th>Date Reported</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            {% for incident in incidents %}
+                                <tr>
+                                    <td>{{ incident.incident_reference }}</td>
+                                    <td>{{ incident.title }}</td>
+                                    <td>{{ incident.category_name }}</td>
+                                    <td>{{ incident.priority }}</td>
+                                    <td>{{ incident.status }}</td>
+                                    <td>{{ incident.reporter_name }}</td>
+                                    <td>{{ incident.reporter_email }}</td>
+                                    <td>
+                                        {{ incident.created_at.strftime('%d %b %Y %H:%M') }}
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for(
+                                            'technician.incident_details',
+                                            incident_id=incident.incident_id
+                                        ) }}">
+                                            Open
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+            {% else %}
+
+                <div class="technician-incidents-empty">
+                    <h3>No incidents found</h3>
+                    <p>No assigned incidents match your search or filter criteria.</p>
+                </div>
+
+            {% endif %}
+
+        </section>
+
+    </main>
 
 </body>
 </html>
-
-

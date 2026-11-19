@@ -8,12 +8,12 @@
     <title>Incident Management - SupportDesk Pro</title>
 
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 30px;
-            background-color: #f5f6fa;
-        }
-
+       body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    background-color: #f1f4f9;
+    color: #26364d;
+}
         h1, h2 {
             color: #202938;
         }
@@ -36,7 +36,7 @@
             color: white;
         }
 
-        select, button {
+        select, button, input {
             padding: 8px;
             margin-top: 5px;
         }
@@ -75,11 +75,60 @@
         .assignment-form {
             min-width: 180px;
         }
+
+        .search-panel {
+            background-color: white;
+            padding: 20px;
+            margin: 20px 0;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+        }
+
+        .search-fields {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: end;
+        }
+
+        .search-fields label {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .search-fields input,
+        .search-fields select {
+            min-width: 160px;
+            padding: 9px;
+        }
+
+        .reset-button {
+            display: inline-block;
+            padding: 9px 14px;
+            margin-top: 5px;
+            background-color: #e5e7eb;
+            color: #202938;
+            text-decoration: none;
+            border-radius: 4px;
+        }
+
+        .reset-button:hover {
+            background-color: #d1d5db;
+        }
+
+        .results-count {
+            margin-top: 15px;
+            color: #4b5563;
+        }
     </style>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">`r`n</head>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
 
 <body>
     {% include 'partials/navigation.html' %}
+    <main class="role-page-container">
 
     <h1>SupportDesk Pro</h1>
 
@@ -95,10 +144,97 @@
         {% endfor %}
     {% endwith %}
 
+    <section class="search-panel">
+        <h3>Search and Filter Incidents</h3>
+
+        <form method="GET" action="{{ url_for('admin.incidents') }}">
+            <div class="search-fields">
+
+                <label>
+                    Search incidents
+                    <input
+                        type="search"
+                        name="search"
+                        value="{{ search_term }}"
+                        maxlength="100"
+                        placeholder="Reference, title, description or reporter"
+                    >
+                </label>
+
+                <label>
+                    Status
+                    <select name="status">
+                        <option value="">All statuses</option>
+
+                        {% for option in [
+                            'Open',
+                            'In Progress',
+                            'Awaiting User Confirmation',
+                            'Reopened',
+                            'Closed'
+                        ] %}
+                            <option
+                                value="{{ option }}"
+                                {% if selected_status == option %}selected{% endif %}
+                            >
+                                {{ option }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </label>
+
+                <label>
+                    Priority
+                    <select name="priority">
+                        <option value="">All priorities</option>
+
+                        {% for option in ['Low', 'Medium', 'High'] %}
+                            <option
+                                value="{{ option }}"
+                                {% if selected_priority == option %}selected{% endif %}
+                            >
+                                {{ option }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </label>
+
+                <label>
+                    Category
+                    <select name="category_id">
+                        <option value="">All categories</option>
+
+                        {% for category in categories %}
+                            <option
+                                value="{{ category.category_id }}"
+                                {% if selected_category_id == category.category_id %}selected{% endif %}
+                            >
+                                {{ category.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </label>
+
+                <button type="submit">Apply Filters</button>
+
+                <a
+                    class="reset-button"
+                    href="{{ url_for('admin.incidents') }}"
+                >
+                    Clear Filters
+                </a>
+
+            </div>
+        </form>
+
+        <p class="results-count">
+            Showing {{ incidents|length }} matching incident(s).
+        </p>
+    </section>
+
     {% if incidents %}
 
         <table>
-
             <thead>
                 <tr>
                     <th>Reference</th>
@@ -114,20 +250,13 @@
             </thead>
 
             <tbody>
-
                 {% for incident in incidents %}
-
                     <tr>
                         <td>{{ incident.incident_reference }}</td>
-
                         <td>{{ incident.title }}</td>
-
                         <td>{{ incident.reporter_name }}</td>
-
                         <td>{{ incident.category_name }}</td>
-
                         <td>{{ incident.priority }}</td>
-
                         <td>{{ incident.status }}</td>
 
                         <td>
@@ -136,11 +265,9 @@
 
                         <td>
                             {% if incident.status == "Closed" %}
-
                                 <p>Incident closed</p>
 
                             {% elif technicians %}
-
                                 <form
                                     class="assignment-form"
                                     method="POST"
@@ -149,24 +276,18 @@
                                         incident_id=incident.incident_id
                                     ) }}"
                                 >
-
                                     <input
                                         type="hidden"
                                         name="csrf_token"
                                         value="{{ csrf_token() }}"
                                     >
 
-                                    <select
-                                        name="technician_id"
-                                        required
-                                    >
-
+                                    <select name="technician_id" required>
                                         <option value="">
                                             Select technician
                                         </option>
 
                                         {% for technician in technicians %}
-
                                             <option
                                                 value="{{ technician.user_id }}"
                                                 {% if technician.user_id == incident.technician_id %}
@@ -175,9 +296,7 @@
                                             >
                                                 {{ technician.full_name }}
                                             </option>
-
                                         {% endfor %}
-
                                     </select>
 
                                     <button type="submit">
@@ -187,13 +306,10 @@
                                             Assign
                                         {% endif %}
                                     </button>
-
                                 </form>
 
                             {% else %}
-
                                 <p>No active technicians available.</p>
-
                             {% endif %}
                         </td>
 
@@ -201,17 +317,12 @@
                             {{ incident.created_at.strftime('%d %b %Y %H:%M') }}
                         </td>
                     </tr>
-
                 {% endfor %}
-
             </tbody>
-
         </table>
 
     {% else %}
-
-        <p>No incidents have been submitted yet.</p>
-
+        <p>No incidents match your search or filter criteria.</p>
     {% endif %}
 
     <p>
@@ -219,9 +330,6 @@
             Return to Dashboard
         </a>
     </p>
-
+</main>
 </body>
 </html>
-
-
-

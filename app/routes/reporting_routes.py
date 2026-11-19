@@ -68,7 +68,7 @@ def safe_csv_value(value):
 
 
 @reporting_bp.route("/")
-@roles_required("Supervisor")
+@roles_required("Supervisor", "Administrator")
 def reports():
     current_user = get_current_user()
     error_message = None
@@ -90,7 +90,7 @@ def reports():
 
 
 @reporting_bp.route("/export/csv")
-@roles_required("Supervisor")
+@roles_required("Supervisor", "Administrator")
 def export_csv():
 
     try:
@@ -673,7 +673,7 @@ def build_reporting_pdf(data):
 
 
 @reporting_bp.route("/export/pdf")
-@roles_required("Supervisor")
+@roles_required("Supervisor", "Administrator")
 def export_pdf():
 
     try:

@@ -1,51 +1,91 @@
-﻿<!DOCTYPE html>
+﻿
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - SupportDesk Pro</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">`r`n</head>
-<body>
 
-    <h1>SupportDesk Pro</h1>
-    <h2>Sign In</h2>
+    <title>Sign In | SupportDesk Pro</title>
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% for category, message in messages %}
-            <p>{{ message }}</p>
-        {% endfor %}
-    {% endwith %}
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+</head>
 
-    <form method="POST" action="{{ url_for('auth.login') }}">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<body class="auth-page">
 
-        <div>
-            <label for="email">Email Address</label>
-            <input
-                type="email"
-                id="email"
-                name="email"
-                required
-                autocomplete="email"
-            >
-        </div>
+    <main class="auth-wrapper">
 
-        <div>
-            <label for="password">Password</label>
-            <input
-                type="password"
-                id="password"
-                name="password"
-                required
-                autocomplete="current-password"
-            >
-        </div>
+        <section class="auth-brand">
+            <div class="auth-brand-mark">SD</div>
+            <h1>SupportDesk Pro</h1>
+            <p>IT Support and Incident Management</p>
+        </section>
 
-        <button type="submit">Sign In</button>
-    </form>
+        <section class="auth-card">
 
+            <div class="auth-heading">
+                <h2>Welcome back</h2>
+                <p>Sign in to access your support workspace.</p>
+            </div>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% for category, message in messages %}
+                    <div class="auth-alert {{ category }}" role="alert">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endwith %}
+
+            <form method="POST"
+                  action="{{ url_for('auth.login') }}"
+                  class="auth-form">
+
+                <input type="hidden"
+                       name="csrf_token"
+                       value="{{ csrf_token() }}">
+
+                <div class="auth-field">
+                    <label for="email">Email address</label>
+                    <input
+                        type="email"
+                        id="email"
+                        name="email"
+                        placeholder="Enter your email address"
+                        autocomplete="email"
+                        required
+                        autofocus
+                    >
+                </div>
+
+                <div class="auth-field">
+                    <label for="password">Password</label>
+                    <input
+                        type="password"
+                        id="password"
+                        name="password"
+                        placeholder="Enter your password"
+                        autocomplete="current-password"
+                        required
+                    >
+                </div>
+
+                <button type="submit" class="auth-submit">
+                    Sign In
+                </button>
+
+            </form>
+
+            <div class="auth-footer">
+                <p>Secure access to your IT support workspace.</p>
+            </div>
+
+        </section>
+
+        <footer class="auth-copyright">
+            SupportDesk Pro
+        </footer>
+
+    </main>
 
 </body>
 </html>
-
-

@@ -46,6 +46,50 @@ class UserRepository:
             connection.close()
 
     @staticmethod
+    def record_login_attempt(user_id, email: str, successful: bool):
+        """Record a successful or unsuccessful login attempt."""
+
+        connection = get_connection()
+
+        try:
+            cursor = connection.cursor()
+
+            action = "Login Successful" if successful else "Login Failed"
+
+            # Never store passwords or unrestricted user input.
+            safe_email = (
+                email.replace("\r", " ").replace("\n", " ").strip()[:450]
+                if isinstance(email, str)
+                else ""
+            )
+
+            details = f"Login attempt for email: {safe_email}"
+
+            cursor.execute(
+                """
+                INSERT INTO dbo.AuditLogs (
+                    IncidentId,
+                    UserId,
+                    Action,
+                    FromStatus,
+                    ToStatus,
+                    Details
+                )
+                VALUES (NULL, ?, ?, NULL, NULL, ?)
+                """,
+                (user_id, action, details),
+            )
+
+            connection.commit()
+
+        except Exception:
+            connection.rollback()
+            raise
+
+        finally:
+            connection.close()
+
+    @staticmethod
     def get_by_id(user_id: int):
         """Retrieve a user by their ID."""
 

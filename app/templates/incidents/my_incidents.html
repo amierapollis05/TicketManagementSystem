@@ -1,79 +1,176 @@
-﻿<!DOCTYPE html>
+﻿
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>My Incidents - SupportDesk Pro</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">`r`n</head>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
 <body>
     {% include 'partials/navigation.html' %}
 
-    <h1>SupportDesk Pro</h1>
-    <h2>My Incidents</h2>
+    <main class="page-container role-page-container">
 
-    <p>View and track the incidents you have reported.</p>
+        <header class="role-page-header">
+            <p class="role-page-eyebrow">SUPPORTDESK PRO</p>
+            <h1>My Incidents</h1>
+            <p>View and track the incidents you have reported.</p>
 
-    <p>
-        <a href="{{ url_for('incident.create') }}">
-            Report a New Incident
-        </a>
-    </p>
+            <a class="button role-primary-action"
+               href="{{ url_for('incident.create') }}">
+                Report a New Incident
+            </a>
+        </header>
 
-    {% if incidents %}
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+                <div class="message {{ category }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endwith %}
 
-        <table border="1" cellpadding="10">
+        <section class="role-search-panel">
+            <h2>Search and Filter Incidents</h2>
 
-            <thead>
-                <tr>
-                    <th>Reference</th>
-                    <th>Title</th>
-                    <th>Category</th>
-                    <th>Priority</th>
-                    <th>Status</th>
-                    <th>Date Reported</th>
-                </tr>
-            </thead>
+            <form method="GET"
+                  action="{{ url_for('incident.my_incidents') }}">
 
-            <tbody>
+                <div class="role-search-fields">
 
-                {% for incident in incidents %}
+                    <div class="role-filter-field">
+                        <label for="search">Search</label>
+                        <input type="text"
+                               id="search"
+                               name="search"
+                               value="{{ search_term }}"
+                               placeholder="Reference, title or description"
+                               maxlength="100">
+                    </div>
 
-                    <tr>
-                        <td>
-    <a href="{{ url_for('incident.details', incident_reference=incident.incident_reference) }}">
-        {{ incident.incident_reference }}
-    </a>
-</td>
-                        <td>{{ incident.title }}</td>
-                        <td>{{ incident.category_name }}</td>
-                        <td>{{ incident.priority }}</td>
-                        <td>{{ incident.status }}</td>
-                        <td>
-                            {{ incident.created_at.strftime('%d %b %Y %H:%M') }}
-                        </td>
-                    </tr>
+                    <div class="role-filter-field">
+                        <label for="status">Status</label>
+                        <select id="status" name="status">
+                            <option value="">All Statuses</option>
+                            {% for value in [
+                                'Open',
+                                'In Progress',
+                                'Awaiting User Confirmation',
+                                'Reopened',
+                                'Closed'
+                            ] %}
+                                <option value="{{ value }}"
+                                    {% if selected_status == value %}selected{% endif %}>
+                                    {{ value }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
 
-                {% endfor %}
+                    <div class="role-filter-field">
+                        <label for="priority">Priority</label>
+                        <select id="priority" name="priority">
+                            <option value="">All Priorities</option>
+                            {% for value in ['Low', 'Medium', 'High'] %}
+                                <option value="{{ value }}"
+                                    {% if selected_priority == value %}selected{% endif %}>
+                                    {{ value }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
 
-            </tbody>
+                    <div class="role-filter-field">
+                        <label for="category_id">Category</label>
+                        <select id="category_id" name="category_id">
+                            <option value="">All Categories</option>
+                            {% for category in categories %}
+                                <option value="{{ category.category_id }}"
+                                    {% if selected_category_id == category.category_id %}selected{% endif %}>
+                                    {{ category.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
 
-        </table>
+                </div>
 
-    {% else %}
+                <div class="role-filter-actions">
+                    <button type="submit" class="button">
+                        Apply Filters
+                    </button>
 
-        <p>You have not reported any incidents yet.</p>
+                    <a class="role-reset-button"
+                       href="{{ url_for('incident.my_incidents') }}">
+                        Clear Filters
+                    </a>
+                </div>
+            </form>
+        </section>
 
-    {% endif %}
+        <section class="role-results-section">
 
-    <p>
-        <a href="{{ url_for('dashboard.index') }}">
-            Return to Dashboard
-        </a>
-    </p>
+            <div class="role-results-heading">
+                <h2>Reported Incidents</h2>
+                <p>Showing {{ incidents|length }} incident(s).</p>
+            </div>
 
+            {% if incidents %}
+                <div class="role-table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Reference</th>
+                                <th>Title</th>
+                                <th>Category</th>
+                                <th>Priority</th>
+                                <th>Status</th>
+                                <th>Date Reported</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            {% for incident in incidents %}
+                                <tr>
+                                    <td>
+                                        <a href="{{ url_for(
+                                            'incident.details',
+                                            incident_reference=incident.incident_reference
+                                        ) }}">
+                                            {{ incident.incident_reference }}
+                                        </a>
+                                    </td>
+                                    <td>{{ incident.title }}</td>
+                                    <td>{{ incident.category_name }}</td>
+                                    <td>{{ incident.priority }}</td>
+                                    <td>{{ incident.status }}</td>
+                                    <td>
+                                        {{ incident.created_at.strftime('%d %b %Y %H:%M') }}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="role-empty-state">
+                    <h3>No incidents found</h3>
+                    <p>No incidents match your search or filters.</p>
+                </div>
+            {% endif %}
+
+        </section>
+
+        <div class="role-bottom-link">
+            <a href="{{ url_for('dashboard.index') }}">
+                Return to Dashboard
+            </a>
+        </div>
+
+    </main>
 </body>
 </html>
-
-
-

@@ -175,12 +175,12 @@
             }
         }
     </style>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">`r`n</head>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"></head>
 
-<body>
+<body class="supervisor-page">
     {% include 'partials/navigation.html' %}
 
-<header>
+<header class="supervisor-banner">
     <h1>SupportDesk Pro</h1>
 
     <h2>Supervisor Dashboard</h2>
@@ -196,7 +196,7 @@
         Organisation-wide incident monitoring and operational oversight.
     </p>
 
-    <<nav class="top-navigation">
+    <nav class="top-navigation">
 
     <a href="{{ url_for('supervisor.dashboard') }}">
         Dashboard Home
@@ -504,20 +504,7 @@
 
     <!-- SIGN OUT -->
 
-    <form
-        id="logout-form"
-        class="logout"
-        method="POST"
-        action="{{ url_for('auth.logout') }}"
-    >
-        <input
-            type="hidden"
-            name="csrf_token"
-            value="{{ csrf_token() }}"
-        >
 
-        <button type="submit">Sign Out</button>
-    </form>
 
 </main>
 

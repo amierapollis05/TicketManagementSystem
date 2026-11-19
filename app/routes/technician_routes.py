@@ -27,11 +27,21 @@ technician_bp = Blueprint(
 @technician_bp.route("/")
 @roles_required("Technician")
 def dashboard():
-    """Display the technician workspace."""
+    """Display the technician workspace and available incident queue."""
 
     current_user = get_current_user()
 
     incidents = IncidentService.get_technician_incidents(current_user["user_id"])
+
+    unassigned_incidents = IncidentService.get_unassigned_incidents()
+
+    reopened_incidents = [
+        incident for incident in incidents if incident["status"] == "Reopened"
+    ]
+
+    my_active_incidents = [
+        incident for incident in incidents if incident["status"] != "Reopened"
+    ]
 
     statistics = {
         "total": len(incidents),
@@ -44,15 +54,17 @@ def dashboard():
             for incident in incidents
             if incident["status"] == "Awaiting User Confirmation"
         ),
-        "reopened": sum(
-            1 for incident in incidents if incident["status"] == "Reopened"
-        ),
+        "reopened": len(reopened_incidents),
+        "unassigned": len(unassigned_incidents),
     }
 
     return render_template(
         "technician/dashboard.html",
         current_user=current_user,
         incidents=incidents,
+        reopened_incidents=reopened_incidents,
+        my_active_incidents=my_active_incidents,
+        unassigned_incidents=unassigned_incidents,
         statistics=statistics,
     )
 
@@ -60,18 +72,80 @@ def dashboard():
 @technician_bp.route("/incidents")
 @roles_required("Technician")
 def incidents():
-    """Display all incidents assigned to the technician."""
+    """Display and filter incidents assigned to the technician."""
 
     current_user = get_current_user()
 
-    assigned_incidents = IncidentService.get_technician_incidents(
-        current_user["user_id"]
-    )
+    search_term = request.args.get("search", "").strip()
+    status = request.args.get("status", "").strip()
+    priority = request.args.get("priority", "").strip()
+    category_value = request.args.get("category_id", "").strip()
+
+    try:
+        category_id = int(category_value) if category_value else None
+
+        assigned_incidents = IncidentService.search_technician_incidents(
+            technician_id=current_user["user_id"],
+            search_term=search_term,
+            status=status,
+            priority=priority,
+            category_id=category_id,
+        )
+
+    except ValueError as error:
+        flash(str(error), "error")
+        return redirect(url_for("technician.incidents"))
+
+    categories = IncidentService.get_categories()
 
     return render_template(
         "technician/incidents.html",
         incidents=assigned_incidents,
+        categories=categories,
+        search_term=search_term,
+        selected_status=status,
+        selected_priority=priority,
+        selected_category_id=category_id,
     )
+
+
+@technician_bp.route(
+    "/incidents/<int:incident_id>/claim",
+    methods=["POST"],
+)
+@roles_required("Technician")
+def claim_incident(incident_id):
+    """Allow an active technician to claim an unassigned incident."""
+
+    current_user = get_current_user()
+
+    try:
+        IncidentService.claim_incident(
+            incident_id=incident_id,
+            technician_id=current_user["user_id"],
+        )
+
+        flash(
+            "Incident successfully claimed. It is now assigned to you.",
+            "success",
+        )
+
+    except ValueError as error:
+        flash(str(error), "error")
+
+    except Exception:
+        current_app.logger.exception(
+            "Failed to claim incident %s for technician %s.",
+            incident_id,
+            current_user["user_id"],
+        )
+
+        flash(
+            "The incident could not be claimed due to an unexpected error.",
+            "error",
+        )
+
+    return redirect(url_for("technician.dashboard"))
 
 
 @technician_bp.route("/incidents/<int:incident_id>")
@@ -91,7 +165,7 @@ def incident_details(incident_id):
         abort(404)
 
     troubleshooting_records = IncidentService.get_troubleshooting_records(incident_id)
-
+    resolution_history = IncidentService.get_resolution_history(incident_id)
     pending_resolution = None
 
     if incident["status"] == "Awaiting User Confirmation":
@@ -105,6 +179,7 @@ def incident_details(incident_id):
         incident=incident,
         troubleshooting_records=troubleshooting_records,
         pending_resolution=pending_resolution,
+        resolution_history=resolution_history,
     )
 
 

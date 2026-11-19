@@ -13,7 +13,9 @@ class UserManagementService:
     }
 
     @staticmethod
-    def create_user(full_name, email, password, confirm_password, role, administrator_id):
+    def create_user(
+        full_name, email, password, confirm_password, role, administrator_id
+    ):
         """Validate and create an account on behalf of an Administrator."""
 
         if not isinstance(full_name, str) or not full_name.strip():
@@ -27,7 +29,21 @@ class UserManagementService:
             raise ValueError("Email address is required.")
 
         email = email.strip().lower()
-        if len(email) > 254 or "@" not in email or "." not in email.rsplit("@", 1)[-1]:
+        email_parts = email.split("@")
+
+        if len(email) > 254 or len(email_parts) != 2:
+            raise ValueError("Enter a valid email address.")
+
+        local_part, domain = email_parts
+
+        if (
+            not local_part
+            or not domain
+            or "." not in domain
+            or domain.startswith(".")
+            or domain.endswith(".")
+            or ".." in email
+        ):
             raise ValueError("Enter a valid email address.")
 
         if role not in UserManagementService.ALLOWED_ROLES:

@@ -52,19 +52,47 @@ def create():
 @incident_bp.route("/my-incidents")
 @roles_required("User")
 def my_incidents():
-    """Display incidents reported by the logged-in user."""
+    """Display and filter incidents reported by the logged-in user."""
 
     current_user = get_current_user()
 
-    incidents = IncidentService.get_user_incidents(current_user["user_id"])
+    search_term = request.args.get("search", "").strip()
+    status = request.args.get("status", "").strip()
+    priority = request.args.get("priority", "").strip()
+    category_value = request.args.get("category_id", "").strip()
 
-    return render_template("incidents/my_incidents.html", incidents=incidents)
+    try:
+        category_id = int(category_value) if category_value else None
+
+        incidents = IncidentService.search_user_incidents(
+            user_id=current_user["user_id"],
+            search_term=search_term,
+            status=status,
+            priority=priority,
+            category_id=category_id,
+        )
+
+    except ValueError as error:
+        flash(str(error), "error")
+        return redirect(url_for("incident.my_incidents"))
+
+    categories = IncidentService.get_categories()
+
+    return render_template(
+        "incidents/my_incidents.html",
+        incidents=incidents,
+        categories=categories,
+        search_term=search_term,
+        selected_status=status,
+        selected_priority=priority,
+        selected_category_id=category_id,
+    )
 
 
 @incident_bp.route("/<string:incident_reference>")
 @roles_required("User")
 def details(incident_reference):
-    """Display details of an incident owned by the logged-in user."""
+    """Display details and history of an incident owned by the user."""
 
     current_user = get_current_user()
 
@@ -80,4 +108,15 @@ def details(incident_reference):
 
         abort(403)
 
-    return render_template("incidents/details.html", incident=incident)
+    troubleshooting_records = IncidentService.get_troubleshooting_records(
+        incident["incident_id"]
+    )
+
+    resolution_history = IncidentService.get_resolution_history(incident["incident_id"])
+
+    return render_template(
+        "incidents/details.html",
+        incident=incident,
+        troubleshooting_records=troubleshooting_records,
+        resolution_history=resolution_history,
+    )

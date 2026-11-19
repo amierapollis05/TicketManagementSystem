@@ -4,44 +4,216 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>{{ dashboard.title }} - SupportDesk Pro</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">`r`n</head>
-<body>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body class="dashboard-page">
+
     {% include 'partials/navigation.html' %}
 
-    <h1>SupportDesk Pro</h1>
-    <h2>{{ dashboard.title }}</h2>
+    <main class="page-container dashboard-container">
 
-    <p>Welcome, {{ current_user.full_name }}.</p>
-    <p>Your account role: <strong>{{ current_user.role }}</strong></p>
-    <p>{{ dashboard.description }}</p>
+        <header class="page-header dashboard-header">
+            <div>
+                <p class="dashboard-eyebrow">SUPPORTDESK PRO</p>
 
-    {% if current_user.role == "User" %}
-        <hr>
-        <h3>Incident Management</h3>
+                <h1>{{ dashboard.title }}</h1>
 
-        <p>
-            <a href="{{ url_for('incident.create') }}">
-                <button type="button">Create New Incident</button>
-            </a>
-        </p>
+                <p class="page-subtitle">
+                    Welcome back, {{ current_user.full_name }}.
+                    You are signed in as
+                    <strong>{{ current_user.role }}</strong>.
+                </p>
+            </div>
+        </header>
 
-        <p>
-            <a href="{{ url_for('incident.my_incidents') }}">
-                <button type="button">View My Incidents</button>
-            </a>
-        </p>
-    {% endif %}
+        <section class="section-card dashboard-welcome">
 
-    <hr>
+            <div class="section-header">
+                <h2>Welcome to SupportDesk Pro</h2>
+            </div>
 
-    <form method="POST" action="{{ url_for('auth.logout') }}">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <button type="submit">Sign Out</button>
-    </form>
+            <p class="dashboard-description">
+                {{ dashboard.description }}
+            </p>
+
+            {% if current_user.role == "User" %}
+
+                <div class="card-grid dashboard-grid">
+
+                    <article class="card dashboard-card">
+                        <div class="dashboard-card-content">
+                            <h3>Report an Incident</h3>
+
+                            <p>
+                                Submit a new IT support request and provide
+                                the information needed to investigate it.
+                            </p>
+                        </div>
+
+                        <a class="button dashboard-action"
+                           href="{{ url_for('incident.create') }}">
+                            Report Incident
+                        </a>
+                    </article>
+
+                    <article class="card dashboard-card">
+                        <div class="dashboard-card-content">
+                            <h3>Track Your Incidents</h3>
+
+                            <p>
+                                Review incidents you have reported and
+                                follow their current progress.
+                            </p>
+                        </div>
+
+                        <a class="button dashboard-action"
+                           href="{{ url_for('incident.my_incidents') }}">
+                            View My Incidents
+                        </a>
+                    </article>
+
+                </div>
+
+            {% elif current_user.role == "Administrator" %}
+
+                <div class="card-grid dashboard-grid">
+
+                    <article class="card dashboard-card">
+                        <div class="dashboard-card-content">
+                            <h3>Incident Management</h3>
+
+                            <p>
+                                Review reported incidents and manage
+                                technician assignments.
+                            </p>
+                        </div>
+
+                        <a class="button dashboard-action"
+                           href="{{ url_for('admin.incidents') }}">
+                            Manage Incidents
+                        </a>
+                    </article>
+
+                    <article class="card dashboard-card">
+                        <div class="dashboard-card-content">
+                            <h3>User Management</h3>
+
+                            <p>
+                                Create accounts, manage user roles and
+                                control account access.
+                            </p>
+                        </div>
+
+                        <a class="button dashboard-action"
+                           href="{{ url_for('admin.users') }}">
+                            Manage Users
+                        </a>
+                    </article>
+
+                    <article class="card dashboard-card">
+                        <div class="dashboard-card-content">
+                            <h3>Reports and Analytics</h3>
+
+                            <p>
+                                Review incident statistics and access
+                                system reports.
+                            </p>
+                        </div>
+
+                        <a class="button dashboard-action"
+                           href="{{ url_for('reporting.reports') }}">
+                            View Reports
+                        </a>
+                    </article>
+
+                </div>
+
+            {% elif current_user.role == "Technician" %}
+
+                <div class="card-grid dashboard-grid">
+
+                    <article class="card dashboard-card">
+                        <div class="dashboard-card-content">
+                            <h3>Technician Dashboard</h3>
+
+                            <p>
+                                Open your technician workspace to review
+                                assigned incidents and your workload.
+                            </p>
+                        </div>
+
+                        <a class="button dashboard-action"
+                           href="{{ url_for('technician.dashboard') }}">
+                            Open Dashboard
+                        </a>
+                    </article>
+
+                    <article class="card dashboard-card">
+                        <div class="dashboard-card-content">
+                            <h3>Incident Queue</h3>
+
+                            <p>
+                                Review incidents available to you and
+                                manage your assigned work.
+                            </p>
+                        </div>
+
+                        <a class="button dashboard-action"
+                           href="{{ url_for('technician.incidents') }}">
+                            View Incident Queue
+                        </a>
+                    </article>
+
+                </div>
+
+            {% elif current_user.role == "Supervisor" %}
+
+                <div class="card-grid dashboard-grid">
+
+                    <article class="card dashboard-card">
+                        <div class="dashboard-card-content">
+                            <h3>Supervisor Dashboard</h3>
+
+                            <p>
+                                View organisation-wide incident activity
+                                and operational progress.
+                            </p>
+                        </div>
+
+                        <a class="button dashboard-action"
+                           href="{{ url_for('supervisor.dashboard') }}">
+                            Open Dashboard
+                        </a>
+                    </article>
+
+                    <article class="card dashboard-card">
+                        <div class="dashboard-card-content">
+                            <h3>Reports and Analytics</h3>
+
+                            <p>
+                                Review incident statistics and
+                                performance reports.
+                            </p>
+                        </div>
+
+                        <a class="button dashboard-action"
+                           href="{{ url_for('reporting.reports') }}">
+                            View Reports
+                        </a>
+                    </article>
+
+                </div>
+
+            {% endif %}
+
+        </section>
+
+    </main>
 
 </body>
 </html>
-
-
-
