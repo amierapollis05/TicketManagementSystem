@@ -1,17 +1,36 @@
+﻿
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SupportDesk Pro</title>
-</head>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">`r`n</head>
 <body>
 
     <h1>SupportDesk Pro</h1>
-
     <p>IT Support Ticketing & Troubleshooting Management System</p>
+
+    {% if session.get("user_id") %}
+        <h2>Welcome back!</h2>
+
+        <form method="POST" action="{{ url_for('auth.logout') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit">Sign Out</button>
+        </form>
+    {% else %}
+        <h2>Welcome to SupportDesk Pro</h2>
+
+        <p>
+            <a href="{{ url_for('auth.login') }}">Sign In</a>
+        </p>
+    {% endif %}
+
+    <hr>
 
     <p>Application status: Running</p>
 
 </body>
 </html>
+
+

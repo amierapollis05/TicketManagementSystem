@@ -1,0 +1,296 @@
+﻿
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Review Resolution | SupportDesk Pro</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 30px 16px;
+            background: #f3f5f9;
+            color: #263238;
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            max-width: 760px;
+            margin: 30px auto;
+        }
+
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 18px rgba(0, 0, 0, 0.06);
+        }
+
+        .brand {
+            color: #174ea6;
+            font-size: 14px;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        h1 {
+            margin-top: 12px;
+            font-size: 27px;
+        }
+
+        .muted {
+            color: #64748b;
+            line-height: 1.6;
+        }
+
+        .incident-info {
+            background: #f4f6f9;
+            padding: 18px;
+            border-radius: 8px;
+            margin: 22px 0;
+        }
+
+        .resolution {
+            border-left: 4px solid #174ea6;
+            background: #f8fafc;
+            padding: 20px;
+            border-radius: 5px;
+            line-height: 1.7;
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+        }
+
+        .field {
+            margin-top: 24px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 120px;
+            padding: 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 7px;
+            font-family: inherit;
+            font-size: 14px;
+            resize: vertical;
+        }
+
+        .choice {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 14px;
+            border: 1px solid #dbe2ea;
+            border-radius: 7px;
+            margin: 10px 0;
+        }
+
+        .choice input {
+            margin-top: 3px;
+        }
+
+        .choice label {
+            margin: 0;
+            cursor: pointer;
+        }
+
+        button {
+            width: 100%;
+            margin-top: 24px;
+            padding: 14px;
+            border: none;
+            border-radius: 7px;
+            background: #174ea6;
+            color: white;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #123d83;
+        }
+
+        .error {
+            padding: 13px;
+            margin: 18px 0;
+            background: #fee2e2;
+            color: #991b1b;
+            border-radius: 7px;
+        }
+
+        .notice {
+            padding: 13px;
+            margin-top: 20px;
+            background: #eff6ff;
+            color: #1e40af;
+            border-radius: 7px;
+            font-size: 13px;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 20px;
+            color: #64748b;
+            font-size: 12px;
+        }
+    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">`r`n</head>
+
+<body>
+
+<div class="container">
+
+    <div class="card">
+
+        <div class="brand">SUPPORTDESK PRO</div>
+
+        <h1>Review Proposed Resolution</h1>
+
+        <p class="muted">
+            Hello {{ resolution.reporter_name }},
+
+            Your support technician has investigated your incident
+            and submitted a proposed resolution for your review.
+        </p>
+
+        <div class="incident-info">
+
+            <p>
+                <strong>Incident Reference:</strong>
+                {{ resolution.incident_reference }}
+            </p>
+
+            <p>
+                <strong>Incident Title:</strong>
+                {{ resolution.incident_title }}
+            </p>
+
+            <p>
+                <strong>Current Status:</strong>
+                {{ resolution.status }}
+            </p>
+
+            <p>
+                <strong>Submitted:</strong>
+                {{ resolution.submitted_at }}
+            </p>
+
+        </div>
+
+        <h3>Technician's Proposed Resolution</h3>
+
+        <div class="resolution">{{ resolution.resolution_text }}</div>
+
+        <div class="notice">
+            Please review the proposed resolution carefully.
+            If your issue has been resolved, accept it.
+            If it has not been resolved, reject it and explain why.
+        </div>
+
+        {% if error %}
+            <div class="error">
+                {{ error }}
+            </div>
+        {% endif %}
+
+        <form method="POST">
+
+            <input
+                type="hidden"
+                name="csrf_token"
+                value="{{ csrf_token() }}"
+            >
+
+            <div class="field">
+
+                <label>Your Decision</label>
+
+                <div class="choice">
+                    <input
+                        type="radio"
+                        id="accepted"
+                        name="decision"
+                        value="Accepted"
+                        required
+                    >
+
+                    <label for="accepted">
+                        Accept Resolution
+
+                        <div class="muted">
+                            My issue has been resolved.
+                        </div>
+                    </label>
+                </div>
+
+                <div class="choice">
+                    <input
+                        type="radio"
+                        id="rejected"
+                        name="decision"
+                        value="Rejected"
+                        required
+                    >
+
+                    <label for="rejected">
+                        Reject Resolution
+
+                        <div class="muted">
+                            My issue has not been resolved.
+                        </div>
+                    </label>
+                </div>
+
+            </div>
+
+            <div class="field">
+
+                <label for="comments">
+                    Comments or Rejection Reason
+                </label>
+
+                <textarea
+                    id="comments"
+                    name="comments"
+                    maxlength="1000"
+                    placeholder="If you reject the resolution, explain what is still wrong or what assistance you need."
+                ></textarea>
+
+                <p class="muted">
+                    A reason is required when rejecting a resolution.
+                    Maximum 1,000 characters.
+                </p>
+
+            </div>
+
+            <button type="submit">
+                Submit My Decision
+            </button>
+
+        </form>
+
+    </div>
+
+    <footer>
+        SupportDesk Pro | IT Service Management
+    </footer>
+
+</div>
+
+</body>
+</html>
+
+

@@ -1,5 +1,6 @@
-from flask import Blueprint, jsonify, render_template
+from flask import Blueprint, jsonify, redirect, render_template, url_for
 
+from app.security.session_user import get_current_user
 from app.services.database_service import DatabaseService
 
 main_bp = Blueprint("main", __name__)
@@ -7,6 +8,14 @@ main_bp = Blueprint("main", __name__)
 
 @main_bp.route("/")
 def home():
+    current_user = get_current_user()
+
+    if current_user:
+        if current_user["role"] == "Supervisor":
+            return redirect(url_for("supervisor.dashboard"))
+
+        return redirect(url_for("dashboard.index"))
+
     return render_template("home.html")
 
 

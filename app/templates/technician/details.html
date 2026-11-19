@@ -1,0 +1,376 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>{{ incident.incident_reference }} - SupportDesk Pro</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6f9;
+            margin: 0;
+            padding: 30px;
+            color: #263238;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: auto;
+        }
+
+        .panel {
+            background: white;
+            padding: 24px;
+            margin-bottom: 22px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+
+        h1, h2, h3 {
+            margin-top: 0;
+        }
+
+        .detail {
+            margin: 12px 0;
+            line-height: 1.6;
+        }
+
+        .label {
+            font-weight: bold;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 130px;
+            padding: 12px;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            resize: vertical;
+        }
+
+        button {
+            background: #174ea6;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 12px;
+        }
+
+        button:hover {
+            background: #103b80;
+        }
+
+        .record {
+            border-left: 4px solid #174ea6;
+            padding: 12px 18px;
+            margin: 18px 0;
+            background: #f8faff;
+        }
+
+        .record-date {
+            color: #667085;
+            font-size: 13px;
+        }
+
+        .message {
+            padding: 12px;
+            margin-bottom: 12px;
+            border-radius: 5px;
+        }
+
+        .success {
+            background: #e5f5e9;
+            color: #176b32;
+        }
+
+        .error {
+            background: #fdeaea;
+            color: #a12626;
+        }
+
+        .muted {
+            color: #667085;
+        }
+    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">`r`n</head>
+
+<body>
+    {% include 'partials/navigation.html' %}
+
+<div class="container">
+
+    <h1>SupportDesk Pro</h1>
+    <h2>Incident Investigation</h2>
+
+    <p>
+        <a href="{{ url_for('technician.incidents') }}">
+            &larr; Back to Assigned Incidents
+        </a>
+    </p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+            <div class="message {{ category }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endwith %}
+
+    <section class="panel">
+        <h3>Incident Information</h3>
+
+        <p class="detail">
+            <span class="label">Reference:</span>
+            {{ incident.incident_reference }}
+        </p>
+
+        <p class="detail">
+            <span class="label">Title:</span>
+            {{ incident.title }}
+        </p>
+
+        <p class="detail">
+            <span class="label">Description:</span>
+            {{ incident.description }}
+        </p>
+
+        <p class="detail">
+            <span class="label">Category:</span>
+            {{ incident.category_name }}
+        </p>
+
+        <p class="detail">
+            <span class="label">Priority:</span>
+            {{ incident.priority }}
+        </p>
+
+        <p class="detail">
+            <span class="label">Status:</span>
+            {{ incident.status }}
+        </p>
+
+        <p class="detail">
+            <span class="label">Date Reported:</span>
+            {{ incident.created_at.strftime('%d %b %Y %H:%M') }}
+        </p>
+    </section>
+
+    <section class="panel">
+        <h3>Reporting User</h3>
+
+        <p class="detail">
+            <span class="label">Name:</span>
+            {{ incident.reporter_name }}
+        </p>
+
+        <p class="detail">
+            <span class="label">Email:</span>
+            {{ incident.reporter_email }}
+        </p>
+    </section>
+
+    <section class="panel">
+        <h3>Submit Certificate of Resolution (COR)</h3>
+
+        {% if incident.status in ('In Progress', 'Reopened') %}
+
+            <p>
+                Once the investigation is complete, submit a proposed
+                resolution for the reporting user's review.
+            </p>
+
+            <p class="muted">
+                The user will receive an email asking them to accept
+                or reject your proposed resolution.
+            </p>
+
+            <form
+                method="POST"
+                action="{{ url_for(
+                    'technician.submit_resolution',
+                    incident_id=incident.incident_id
+                ) }}"
+            >
+
+                <input
+                    type="hidden"
+                    name="csrf_token"
+                    value="{{ csrf_token() }}"
+                >
+
+                <label for="resolution_text">
+                    <strong>Proposed Resolution</strong>
+                </label>
+
+                <textarea
+                    id="resolution_text"
+                    name="resolution_text"
+                    maxlength="2000"
+                    required
+                    placeholder="Explain what caused the issue, what you did to resolve it, and what outcome the user should expect..."
+                ></textarea>
+
+                <button type="submit">
+                    Submit COR and Notify User
+                </button>
+
+            </form>
+
+        
+
+{% elif incident.status == 'Awaiting User Confirmation' %}
+
+    <p class="muted">
+        A proposed resolution has already been submitted.
+        The incident is waiting for the reporting user's decision.
+    </p>
+
+    {% if pending_resolution %}
+
+        <p>
+            <strong>Resolution ID:</strong>
+            {{ pending_resolution.resolution_id }}
+        </p>
+
+        <p>
+            <strong>Submitted:</strong>
+            {{ pending_resolution.submitted_at }}
+        </p>
+
+        <form
+            method="POST"
+            action="{{ url_for(
+                'technician.resend_resolution_email',
+                incident_id=incident.incident_id,
+                resolution_id=pending_resolution.resolution_id
+            ) }}"
+        >
+            <input
+                type="hidden"
+                name="csrf_token"
+                value="{{ csrf_token() }}"
+            >
+
+            <button type="submit">
+                Resend COR Notification
+            </button>
+        </form>
+
+    {% else %}
+
+        <p class="muted">
+            No pending resolution is available for resending.
+        </p>
+
+    {% endif %}
+
+
+
+        {% else %}
+
+            <p class="muted">
+                A resolution cannot be submitted while this incident
+                is in its current status.
+            </p>
+
+        {% endif %}
+    </section>
+
+    <section class="panel">
+        <h3>Record Troubleshooting Action</h3>
+
+        {% if incident.status in ('In Progress', 'Reopened') %}
+
+            <p>
+                Document the diagnostic steps, tests performed,
+                findings or actions taken while investigating this incident.
+            </p>
+
+            <form
+                method="POST"
+                action="{{ url_for(
+                    'technician.add_troubleshooting',
+                    incident_id=incident.incident_id
+                ) }}"
+            >
+
+                <input
+                    type="hidden"
+                    name="csrf_token"
+                    value="{{ csrf_token() }}"
+                >
+
+                <label for="action_taken">
+                    <strong>Investigation Notes</strong>
+                </label>
+
+                <textarea
+                    id="action_taken"
+                    name="action_taken"
+                    maxlength="2000"
+                    required
+                    placeholder="Example: Checked the network connection, tested connectivity to the gateway and identified packet loss..."
+                ></textarea>
+
+                <button type="submit">
+                    Save Troubleshooting Record
+                </button>
+
+            </form>
+
+        {% else %}
+
+            <p class="muted">
+                Troubleshooting records cannot be added while this
+                incident is in its current status.
+            </p>
+
+        {% endif %}
+    </section>
+
+    <section class="panel">
+        <h3>Investigation History</h3>
+
+        {% if troubleshooting_records %}
+
+            {% for record in troubleshooting_records %}
+
+                <div class="record">
+
+                    <p>
+                        <strong>{{ record.technician_name }}</strong>
+                    </p>
+
+                    <p>
+                        {{ record.action_taken }}
+                    </p>
+
+                    <p class="record-date">
+                        {{ record.created_at.strftime('%d %b %Y %H:%M') }}
+                    </p>
+
+                </div>
+
+            {% endfor %}
+
+        {% else %}
+
+            <p class="muted">
+                No troubleshooting actions have been recorded yet.
+            </p>
+
+        {% endif %}
+
+    </section>
+
+</div>
+
+</body>
+</html>
+
+

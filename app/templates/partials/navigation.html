@@ -1,0 +1,42 @@
+
+<nav class="main-navigation">
+    <a class="brand" href="{{ url_for('dashboard.index') }}">
+        SUPPORTDESK PRO
+    </a>
+
+    <div class="nav-links">
+
+        {% if current_user.role == 'User' %}
+            <a href="{{ url_for('dashboard.index') }}">Dashboard</a>
+            <a href="{{ url_for('incident.my_incidents') }}">My Incidents</a>
+            <a href="{{ url_for('incident.create') }}">Report Incident</a>
+
+        {% elif current_user.role == 'Technician' %}
+            <a href="{{ url_for('technician.dashboard') }}">Dashboard</a>
+            <a href="{{ url_for('technician.incidents') }}">My Assigned Incidents</a>
+
+        {% elif current_user.role == 'Administrator' %}
+            <a href="{{ url_for('dashboard.index') }}">Dashboard</a>
+            <a href="{{ url_for('admin.incidents') }}">Manage Incidents</a>
+            <a href="{{ url_for('admin.users') }}">User Management</a>
+
+        {% elif current_user.role == 'Supervisor' %}
+            <a href="{{ url_for('supervisor.dashboard') }}">Dashboard</a>
+            <a href="{{ url_for('reporting.reports') }}">Reports</a>
+        {% endif %}
+
+        <form method="POST"
+              action="{{ url_for('auth.logout') }}"
+              class="nav-logout">
+
+            <input type="hidden"
+                   name="csrf_token"
+                   value="{{ csrf_token() }}">
+
+            <button type="submit" class="logout-button">
+                Sign Out
+            </button>
+        </form>
+
+    </div>
+</nav>

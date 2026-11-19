@@ -1,0 +1,94 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Technician Workspace - SupportDesk Pro</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">`r`n</head>
+<body>
+    {% include 'partials/navigation.html' %}
+
+    <h1>SupportDesk Pro</h1>
+
+    <h2>Technician Workspace</h2>
+
+    <p>Welcome, {{ current_user.full_name }}.</p>
+
+    <p>Manage and investigate your assigned incidents.</p>
+
+    <hr>
+
+    <h3>Workload Overview</h3>
+
+    <p>Total Assigned Incidents: {{ statistics.total }}</p>
+
+    <p>Open: {{ statistics.open }}</p>
+
+    <p>In Progress: {{ statistics.in_progress }}</p>
+
+    <p>Awaiting User Confirmation: {{ statistics.awaiting_confirmation }}</p>
+
+    <p>Reopened: {{ statistics.reopened }}</p>
+
+    <hr>
+
+    <h3>Recently Assigned Work</h3>
+
+    {% if incidents %}
+
+        <table border="1" cellpadding="8">
+            <thead>
+                <tr>
+                    <th>Reference</th>
+                    <th>Title</th>
+                    <th>Category</th>
+                    <th>Priority</th>
+                    <th>Status</th>
+                    <th>Reporter</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for incident in incidents %}
+                <tr>
+                    <td>{{ incident.incident_reference }}</td>
+                    <td>{{ incident.title }}</td>
+                    <td>{{ incident.category_name }}</td>
+                    <td>{{ incident.priority }}</td>
+                    <td>{{ incident.status }}</td>
+                    <td>{{ incident.reporter_name }}</td>
+                    <td>
+                        <a href="{{ url_for(
+                            'technician.incident_details',
+                            incident_id=incident.incident_id
+                        ) }}">
+                            View Incident
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+    {% else %}
+
+        <p>You currently have no assigned incidents.</p>
+
+    {% endif %}
+
+    <p>
+        <a href="{{ url_for('technician.incidents') }}">
+            View All Assigned Incidents
+        </a>
+    </p>
+
+    <form method="POST" action="{{ url_for('auth.logout') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit">Sign Out</button>
+    </form>
+
+</body>
+</html>
+
+

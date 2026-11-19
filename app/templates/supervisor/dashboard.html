@@ -1,0 +1,527 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Supervisor Dashboard - SupportDesk Pro</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f6f9;
+            color: #263238;
+        }
+
+        header {
+            background: #172b4d;
+            color: white;
+            padding: 24px 5%;
+        }
+
+        header h1 {
+            margin: 0 0 8px;
+        }
+
+        header p {
+            margin: 5px 0;
+        }
+
+        main {
+            width: 92%;
+            max-width: 1500px;
+            margin: 30px auto;
+        }
+
+        .section {
+            background: white;
+            padding: 22px;
+            margin-bottom: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .section h2 {
+            margin-top: 0;
+            color: #172b4d;
+        }
+
+        .statistics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 15px;
+        }
+
+        .stat-card {
+            background: #f4f6f9;
+            padding: 18px;
+            border-radius: 7px;
+            border-left: 4px solid #174ea6;
+        }
+
+        .stat-card h3 {
+            margin: 0 0 10px;
+            font-size: 14px;
+            color: #546e7a;
+        }
+
+        .stat-card .number {
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 750px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+            font-size: 14px;
+        }
+
+        th {
+            background: #eef2f7;
+            color: #172b4d;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 5px 9px;
+            border-radius: 4px;
+            background: #eef2f7;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .active {
+            color: #137333;
+        }
+
+        .inactive {
+            color: #b3261e;
+        }
+
+        .muted {
+            color: #607d8b;
+        }
+
+        .activity-item {
+            padding: 14px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+        .activity-item p {
+            margin: 5px 0;
+        }
+
+        .empty {
+            color: #607d8b;
+            padding: 15px 0;
+        }
+
+        .top-navigation {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-top: 18px;
+        }
+
+        .top-navigation a {
+            color: white;
+            text-decoration: none;
+            background: #294b78;
+            padding: 9px 13px;
+            border-radius: 5px;
+        }
+
+        .logout {
+            margin-top: 30px;
+        }
+
+        .logout button {
+            padding: 10px 18px;
+            border: none;
+            border-radius: 5px;
+            background: #b3261e;
+            color: white;
+            cursor: pointer;
+        }
+
+        @media (max-width: 600px) {
+            main {
+                width: 95%;
+            }
+
+            .section {
+                padding: 15px;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">`r`n</head>
+
+<body>
+    {% include 'partials/navigation.html' %}
+
+<header>
+    <h1>SupportDesk Pro</h1>
+
+    <h2>Supervisor Dashboard</h2>
+
+    <p>Welcome, {{ current_user.full_name }}.</p>
+
+    <p>
+        Account role:
+        <strong>{{ current_user.role }}</strong>
+    </p>
+
+    <p>
+        Organisation-wide incident monitoring and operational oversight.
+    </p>
+
+    <<nav class="top-navigation">
+
+    <a href="{{ url_for('supervisor.dashboard') }}">
+        Dashboard Home
+    </a>
+
+    <a href="{{ url_for('reporting.reports') }}">
+        Reports &amp; Analytics
+    </a>
+
+    <a href="{{ url_for('auth.logout') }}"
+       onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+        Sign Out
+    </a>
+
+</nav>
+</header>
+
+<main>
+
+    <!-- INCIDENT STATISTICS -->
+
+    <section class="section">
+
+        <h2>Incident Overview</h2>
+
+        <div class="statistics">
+
+            <div class="stat-card">
+                <h3>Total Incidents</h3>
+                <div class="number">
+                    {{ data.incident_statistics.total }}
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <h3>Open</h3>
+                <div class="number">
+                    {{ data.incident_statistics.open }}
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <h3>In Progress</h3>
+                <div class="number">
+                    {{ data.incident_statistics.in_progress }}
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <h3>Reopened</h3>
+                <div class="number">
+                    {{ data.incident_statistics.reopened }}
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <h3>Awaiting Confirmation</h3>
+                <div class="number">
+                    {{ data.incident_statistics.awaiting_confirmation }}
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <h3>Closed</h3>
+                <div class="number">
+                    {{ data.incident_statistics.closed }}
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <h3>Unassigned</h3>
+                <div class="number">
+                    {{ data.incident_statistics.unassigned }}
+                </div>
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- RESOLUTION PERFORMANCE -->
+
+    <section class="section">
+
+        <h2>Resolution Performance</h2>
+
+        <div class="statistics">
+
+            <div class="stat-card">
+                <h3>Submitted Resolutions</h3>
+                <div class="number">
+                    {{ data.resolution_statistics.total }}
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <h3>Accepted</h3>
+                <div class="number">
+                    {{ data.resolution_statistics.accepted }}
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <h3>Rejected</h3>
+                <div class="number">
+                    {{ data.resolution_statistics.rejected }}
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <h3>Pending Confirmation</h3>
+                <div class="number">
+                    {{ data.resolution_statistics.pending }}
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <h3>Acceptance Rate</h3>
+                <div class="number">
+                    {{ data.acceptance_rate }}%
+                </div>
+            </div>
+
+        </div>
+
+        <p class="muted">
+            Acceptance rate is calculated from resolutions that users have
+            either accepted or rejected. Pending resolutions are excluded.
+        </p>
+
+    </section>
+
+
+    <!-- TECHNICIAN WORKLOAD -->
+
+    <section class="section">
+
+        <h2>Technician Workload</h2>
+
+        {% if data.technician_workloads %}
+
+            <div class="table-container">
+
+                <table>
+
+                    <thead>
+                        <tr>
+                            <th>Technician</th>
+                            <th>Account</th>
+                            <th>Total Assigned</th>
+                            <th>Outstanding</th>
+                            <th>In Progress</th>
+                            <th>Awaiting Confirmation</th>
+                            <th>Reopened</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                        {% for technician in data.technician_workloads %}
+
+                            <tr>
+                                <td>{{ technician.full_name }}</td>
+
+                                <td>
+                                    {% if technician.is_active %}
+                                        <span class="active">Active</span>
+                                    {% else %}
+                                        <span class="inactive">Inactive</span>
+                                    {% endif %}
+                                </td>
+
+                                <td>{{ technician.total_assigned }}</td>
+                                <td>{{ technician.outstanding }}</td>
+                                <td>{{ technician.in_progress }}</td>
+                                <td>{{ technician.awaiting_confirmation }}</td>
+                                <td>{{ technician.reopened }}</td>
+                            </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        {% else %}
+
+            <p class="empty">No technician accounts were found.</p>
+
+        {% endif %}
+
+    </section>
+
+
+    <!-- RECENT INCIDENTS -->
+
+    <section class="section">
+
+        <h2>Recently Reported Incidents</h2>
+
+        {% if data.recent_incidents %}
+
+            <div class="table-container">
+
+                <table>
+
+                    <thead>
+                        <tr>
+                            <th>Reference</th>
+                            <th>Title</th>
+                            <th>Category</th>
+                            <th>Reporter</th>
+                            <th>Technician</th>
+                            <th>Priority</th>
+                            <th>Status</th>
+                            <th>Date Reported</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                        {% for incident in data.recent_incidents %}
+
+                            <tr>
+                                <td>{{ incident.reference }}</td>
+                                <td>{{ incident.title }}</td>
+                                <td>{{ incident.category }}</td>
+                                <td>{{ incident.reporter }}</td>
+                                <td>{{ incident.technician }}</td>
+                                <td>{{ incident.priority }}</td>
+                                <td>
+                                    <span class="status">
+                                        {{ incident.status }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {{ incident.created_at.strftime('%d %b %Y %H:%M') }}
+                                </td>
+                            </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        {% else %}
+
+            <p class="empty">No incidents have been reported.</p>
+
+        {% endif %}
+
+    </section>
+
+
+    <!-- AUDIT ACTIVITY -->
+
+    <section class="section">
+
+        <h2>Recent System Activity</h2>
+
+        {% if data.recent_activity %}
+
+            {% for activity in data.recent_activity %}
+
+                <div class="activity-item">
+
+                    <strong>{{ activity.action }}</strong>
+
+                    <p>
+                        {{ activity.details or "No additional details." }}
+                    </p>
+
+                    <p>
+                        <strong>Performed by:</strong>
+                        {{ activity.performed_by }}
+                    </p>
+
+                    <p>
+                        <strong>Related record:</strong>
+                        {{ activity.incident_reference }}
+                    </p>
+
+                    <p class="muted">
+                        {{ activity.created_at.strftime('%d %b %Y %H:%M') }}
+                    </p>
+
+                </div>
+
+            {% endfor %}
+
+        {% else %}
+
+            <p class="empty">No system activity has been recorded.</p>
+
+        {% endif %}
+
+    </section>
+
+
+    <!-- SIGN OUT -->
+
+    <form
+        id="logout-form"
+        class="logout"
+        method="POST"
+        action="{{ url_for('auth.logout') }}"
+    >
+        <input
+            type="hidden"
+            name="csrf_token"
+            value="{{ csrf_token() }}"
+        >
+
+        <button type="submit">Sign Out</button>
+    </form>
+
+</main>
+
+</body>
+</html>
+
+

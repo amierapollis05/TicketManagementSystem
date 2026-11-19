@@ -1,0 +1,79 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>My Incidents - SupportDesk Pro</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">`r`n</head>
+<body>
+    {% include 'partials/navigation.html' %}
+
+    <h1>SupportDesk Pro</h1>
+    <h2>My Incidents</h2>
+
+    <p>View and track the incidents you have reported.</p>
+
+    <p>
+        <a href="{{ url_for('incident.create') }}">
+            Report a New Incident
+        </a>
+    </p>
+
+    {% if incidents %}
+
+        <table border="1" cellpadding="10">
+
+            <thead>
+                <tr>
+                    <th>Reference</th>
+                    <th>Title</th>
+                    <th>Category</th>
+                    <th>Priority</th>
+                    <th>Status</th>
+                    <th>Date Reported</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                {% for incident in incidents %}
+
+                    <tr>
+                        <td>
+    <a href="{{ url_for('incident.details', incident_reference=incident.incident_reference) }}">
+        {{ incident.incident_reference }}
+    </a>
+</td>
+                        <td>{{ incident.title }}</td>
+                        <td>{{ incident.category_name }}</td>
+                        <td>{{ incident.priority }}</td>
+                        <td>{{ incident.status }}</td>
+                        <td>
+                            {{ incident.created_at.strftime('%d %b %Y %H:%M') }}
+                        </td>
+                    </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    {% else %}
+
+        <p>You have not reported any incidents yet.</p>
+
+    {% endif %}
+
+    <p>
+        <a href="{{ url_for('dashboard.index') }}">
+            Return to Dashboard
+        </a>
+    </p>
+
+</body>
+</html>
+
+
+

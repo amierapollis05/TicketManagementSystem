@@ -1,0 +1,722 @@
+﻿
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Reports & Analytics - SupportDesk Pro</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f6f9;
+            color: #263238;
+        }
+
+        header {
+            background: #172b4d;
+            color: white;
+            padding: 24px 5%;
+        }
+
+        header h1 {
+            margin: 0 0 8px;
+        }
+
+        header p {
+            margin: 6px 0;
+        }
+
+        nav {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 18px;
+        }
+
+        nav a {
+            color: white;
+            text-decoration: none;
+            background: #294b78;
+            padding: 10px 14px;
+            border-radius: 5px;
+        }
+
+        main {
+            width: 92%;
+            max-width: 1500px;
+            margin: 30px auto;
+        }
+
+        .section {
+            background: white;
+            padding: 22px;
+            margin-bottom: 24px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .section h2 {
+            margin-top: 0;
+            color: #172b4d;
+        }
+
+        .statistics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+        }
+
+        .stat-card {
+            background: #f4f6f9;
+            padding: 18px;
+            border-radius: 7px;
+            border-left: 4px solid #174ea6;
+        }
+
+        .stat-card h3 {
+            margin: 0 0 10px;
+            font-size: 14px;
+            color: #546e7a;
+        }
+
+        .number {
+            font-size: 28px;
+            font-weight: bold;
+            color: #172b4d;
+        }
+
+        .muted {
+            color: #607d8b;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .chart-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 320px;
+            width: 100%;
+        }
+
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 700px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+            font-size: 14px;
+        }
+
+        th {
+            background: #eef2f7;
+            color: #172b4d;
+        }
+
+        .empty {
+            color: #607d8b;
+            padding: 15px 0;
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: #607d8b;
+        }
+.filter-form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: 15px;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+.filter-group label {
+    font-size: 13px;
+    font-weight: bold;
+    color: #546e7a;
+}
+
+.filter-group select,
+.filter-group input {
+    padding: 11px;
+    border: 1px solid #cbd5e1;
+    border-radius: 5px;
+    font-size: 14px;
+    min-width: 170px;
+}
+
+.filter-button {
+    padding: 11px 20px;
+    background: #174ea6;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.filter-button:hover {
+    background: #123d82;
+}
+
+.filter-error {
+    background: #fce8e6;
+    color: #b3261e;
+    border-left: 4px solid #c5221f;
+    padding: 12px 15px;
+    margin-bottom: 15px;
+    border-radius: 4px;
+}
+
+.custom-date-fields {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.custom-date-fields.hidden {
+    display: none;
+}
+        @media (max-width: 600px) {
+            main {
+                width: 95%;
+            }
+
+            .section {
+                padding: 15px;
+            }
+
+            .chart-container {
+                height: 260px;
+            }
+        }
+
+        .export-button {
+    display: inline-block;
+    padding: 11px 20px;
+    background: #188038;
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    font-size: 14px;
+}
+
+.export-button:hover {
+    background: #12652b;
+}
+    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">`r`n</head>
+
+<body>
+    {% include 'partials/navigation.html' %}
+
+<header>
+    <h1>SupportDesk Pro</h1>
+    <h2>Reports &amp; Analytics</h2>
+
+    <p>Welcome, {{ current_user.full_name }}.</p>
+    <p>Organisation-wide reporting and performance analysis.</p>
+
+    <nav>
+        <a href="{{ url_for('supervisor.dashboard') }}">
+            Supervisor Dashboard
+        </a>
+
+        <a href="{{ url_for('auth.logout') }}"
+           onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+            Sign Out
+        </a>
+    </nav>
+</header>
+
+<main>
+        <section class="section">
+        <h2>Report Filters</h2>
+
+        {% if error_message %}
+            <div class="filter-error">
+                {{ error_message }}
+                Showing the last 30 days instead.
+            </div>
+        {% endif %}
+
+        <form method="GET"
+              action="{{ url_for('reporting.reports') }}"
+              class="filter-form">
+
+            <div class="filter-group">
+                <label for="period">Reporting Period</label>
+
+                <select name="period"
+                        id="period"
+                        onchange="toggleCustomDates()">
+
+                    <option value="today"
+                        {% if data.filters.period == "today" %}selected{% endif %}>
+                        Today
+                    </option>
+
+                    <option value="7"
+                        {% if data.filters.period == "7" %}selected{% endif %}>
+                        Last 7 Days
+                    </option>
+
+                    <option value="30"
+                        {% if data.filters.period == "30" %}selected{% endif %}>
+                        Last 30 Days
+                    </option>
+
+                    <option value="90"
+                        {% if data.filters.period == "90" %}selected{% endif %}>
+                        Last 90 Days
+                    </option>
+
+                    <option value="custom"
+                        {% if data.filters.period == "custom" %}selected{% endif %}>
+                        Custom Range
+                    </option>
+
+                </select>
+            </div>
+
+            <div id="customDateFields" class="custom-date-fields
+                {% if data.filters.period != 'custom' %}hidden{% endif %}">
+
+                <div class="filter-group">
+                    <label for="start_date">Start Date</label>
+
+                    <input type="date"
+                           id="start_date"
+                           name="start_date"
+                           value="{{ data.filters.start_date }}"
+                           max="{{ data.filters.end_date }}">
+                </div>
+
+                <div class="filter-group">
+                    <label for="end_date">End Date</label>
+
+                    <input type="date"
+                           id="end_date"
+                           name="end_date"
+                           value="{{ data.filters.end_date }}">
+                </div>
+
+            </div>
+
+            <button type="submit" class="filter-button">
+                Apply Filters
+            </button>
+<div style="margin-top: 18px; display: flex; gap: 10px; flex-wrap: wrap;">
+
+    <a
+        href="{{ url_for(
+            'reporting.export_csv',
+            period=data.filters.period,
+            start_date=data.filters.start_date,
+            end_date=data.filters.end_date
+        ) }}"
+        class="export-button"
+    >
+        Download CSV Report
+    </a>
+
+    <a
+        href="{{ url_for(
+            'reporting.export_pdf',
+            period=data.filters.period,
+            start_date=data.filters.start_date,
+            end_date=data.filters.end_date
+        ) }}"
+        class="export-button"
+        style="background: #b3261e;"
+    >
+        Download PDF Report
+    </a>
+
+</div>
+        </form>
+
+        <p class="muted">
+            Current reporting period:
+            <strong>{{ data.filters.period_label }}</strong>
+            ({{ data.filters.start_date }} to {{ data.filters.end_date }})
+        </p>
+    </section>
+
+    <section class="section">
+        <h2>Incident Summary</h2>
+
+        <div class="statistics">
+
+            <div class="stat-card">
+                <h3>Total Incidents</h3>
+                <div class="number">
+                    {{ data.summary.total_incidents }}
+                </div>
+                <p class="muted">All recorded incidents</p>
+            </div>
+
+            <div class="stat-card">
+                <h3>Incidents - Last 30 Days</h3>
+                <div class="number">
+                    {{ data.summary.incidents_in_period }}
+                </div>
+                <p class="muted">
+                        Based on incident creation date within the selected period
+                                                            </p>
+            </div>
+
+            <div class="stat-card">
+                <h3>Incidents - {{ data.filters.period_label }}</h3>
+                <div class="number">
+                    {% if data.summary.average_resolution_hours is not none %}
+                        {{ data.summary.average_resolution_hours }} hrs
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </div>
+                <p class="muted">
+                    Based on {{ data.summary.closed_incidents_used_for_average }}
+                    closed incident(s)
+                </p>
+            </div>
+
+            <div class="stat-card">
+                <h3>Resolution Acceptance Rate</h3>
+                <div class="number">
+                    {{ data.resolution_performance.acceptance_rate }}%
+                </div>
+                <p class="muted">
+                    Pending resolutions are excluded
+                </p>
+            </div>
+
+        </div>
+    </section>
+
+
+    <section class="section">
+        <h2>Incident Trends</h2>
+        <p class="muted">
+            Number of incidents reported per day during the selected reporting period.
+        </p>
+
+        {% if data.incident_trends %}
+            <div class="chart-container">
+                <canvas id="incidentTrendChart"></canvas>
+            </div>
+        {% else %}
+            <p class="empty">No incident trend data is available.</p>
+        {% endif %}
+    </section>
+
+
+    <section class="section">
+        <h2>Incident Distribution</h2>
+
+        <div class="chart-grid">
+
+            <div>
+                <h3>Incidents by Category</h3>
+
+                <div class="chart-container">
+                    <canvas id="categoryChart"></canvas>
+                </div>
+            </div>
+
+            <div>
+                <h3>Incidents by Priority</h3>
+
+                <div class="chart-container">
+                    <canvas id="priorityChart"></canvas>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+
+    <section class="section">
+        <h2>Resolution Performance</h2>
+
+        <div class="statistics">
+
+            <div class="stat-card">
+                <h3>Total Resolutions</h3>
+                <div class="number">
+                    {{ data.resolution_performance.total }}
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <h3>Accepted</h3>
+                <div class="number">
+                    {{ data.resolution_performance.accepted }}
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <h3>Rejected</h3>
+                <div class="number">
+                    {{ data.resolution_performance.rejected }}
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <h3>Pending</h3>
+                <div class="number">
+                    {{ data.resolution_performance.pending }}
+                </div>
+            </div>
+
+        </div>
+
+        <div class="chart-container" style="max-width: 500px; margin: 25px auto;">
+            <canvas id="resolutionChart"></canvas>
+        </div>
+
+        <p class="muted">
+            Acceptance rate is calculated using accepted and rejected
+            resolutions only. Pending resolutions are excluded.
+        </p>
+    </section>
+
+
+    <section class="section">
+        <h2>Technician Performance</h2>
+
+        {% if data.technician_performance %}
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Technician</th>
+                            <th>Account Status</th>
+                            <th>Total Assigned</th>
+                            <th>Closed</th>
+                            <th>Outstanding</th>
+                            <th>Closed Share</th>
+                            <th>Average Resolution Time</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for technician in data.technician_performance %}
+                            <tr>
+                                <td>{{ technician.technician }}</td>
+
+                                <td>
+                                    {% if technician.is_active %}
+                                        Active
+                                    {% else %}
+                                        Inactive
+                                    {% endif %}
+                                </td>
+
+                                <td>{{ technician.total_assigned }}</td>
+                                <td>{{ technician.closed }}</td>
+                                <td>{{ technician.outstanding }}</td>
+                                <td>{{ technician.completion_rate }}%</td>
+
+                                <td>
+                                    {% if technician.average_resolution_hours is not none %}
+                                        {{ technician.average_resolution_hours }} hours
+                                    {% else %}
+                                        N/A
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <p class="muted">
+                Closed share is the proportion of a technician's assigned
+                incidents that are closed. It is not a measure of resolution
+                quality. Average resolution time is based on closed incidents.
+            </p>
+
+        {% else %}
+            <p class="empty">No technician performance data is available.</p>
+        {% endif %}
+    </section>
+
+
+    <form
+        id="logout-form"
+        method="POST"
+        action="{{ url_for('auth.logout') }}"
+    >
+        <input
+            type="hidden"
+            name="csrf_token"
+            value="{{ csrf_token() }}"
+        >
+    </form>
+
+</main>
+
+<footer>
+    SupportDesk Pro &copy; 2026
+</footer>
+
+
+<script>
+    const trendLabels = {{ data.incident_trends | map(attribute='date_label') | list | tojson }};
+    const trendCounts = {{ data.incident_trends | map(attribute='count') | list | tojson }};
+
+    const categoryLabels = {{ data.category_breakdown | map(attribute='category') | list | tojson }};
+    const categoryCounts = {{ data.category_breakdown | map(attribute='count') | list | tojson }};
+
+    const priorityLabels = {{ data.priority_breakdown | map(attribute='priority') | list | tojson }};
+    const priorityCounts = {{ data.priority_breakdown | map(attribute='count') | list | tojson }};
+
+    const resolutionLabels = ["Accepted", "Rejected", "Pending"];
+    const resolutionCounts = [
+        {{ data.resolution_performance.accepted }},
+        {{ data.resolution_performance.rejected }},
+        {{ data.resolution_performance.pending }}
+    ];
+
+    if (document.getElementById("incidentTrendChart")) {
+        new Chart(document.getElementById("incidentTrendChart"), {
+            type: "line",
+            data: {
+                labels: trendLabels,
+                datasets: [{
+                    label: "Incidents reported",
+                    data: trendCounts,
+                    borderColor: "#174ea6",
+                    backgroundColor: "rgba(23, 78, 166, 0.12)",
+                    fill: true,
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0
+                        }
+                    }
+                }
+            }
+        });
+    }
+function toggleCustomDates() {
+    const period = document.getElementById("period").value;
+    const dateFields = document.getElementById("customDateFields");
+
+    if (period === "custom") {
+        dateFields.classList.remove("hidden");
+    } else {
+        dateFields.classList.add("hidden");
+    }
+}
+    new Chart(document.getElementById("categoryChart"), {
+        type: "bar",
+        data: {
+            labels: categoryLabels,
+            datasets: [{
+                label: "Incidents",
+                data: categoryCounts,
+                backgroundColor: "#174ea6"
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        precision: 0
+                    }
+                }
+            }
+        }
+    });
+
+    new Chart(document.getElementById("priorityChart"), {
+        type: "bar",
+        data: {
+            labels: priorityLabels,
+            datasets: [{
+                label: "Incidents",
+                data: priorityCounts,
+                backgroundColor: "#d97706"
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        precision: 0
+                    }
+                }
+            }
+        }
+    });
+
+    new Chart(document.getElementById("resolutionChart"), {
+        type: "doughnut",
+        data: {
+            labels: resolutionLabels,
+            datasets: [{
+                data: resolutionCounts,
+                backgroundColor: [
+                    "#188038",
+                    "#c5221f",
+                    "#f9ab00"
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false
+        }
+    });
+</script>
+
+</body>
+</html>
+
+
+
+

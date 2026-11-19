@@ -1,0 +1,227 @@
+﻿
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Incident Management - SupportDesk Pro</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 30px;
+            background-color: #f5f6fa;
+        }
+
+        h1, h2 {
+            color: #202938;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: white;
+            margin-top: 20px;
+        }
+
+        th, td {
+            padding: 12px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+
+        th {
+            background-color: #202938;
+            color: white;
+        }
+
+        select, button {
+            padding: 8px;
+            margin-top: 5px;
+        }
+
+        button {
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        button:hover {
+            background-color: #1d4ed8;
+        }
+
+        button:disabled {
+            background-color: #999;
+            cursor: not-allowed;
+        }
+
+        .success {
+            background-color: #dcfce7;
+            color: #166534;
+            padding: 12px;
+            margin: 10px 0;
+        }
+
+        .error {
+            background-color: #fee2e2;
+            color: #991b1b;
+            padding: 12px;
+            margin: 10px 0;
+        }
+
+        .assignment-form {
+            min-width: 180px;
+        }
+    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">`r`n</head>
+
+<body>
+    {% include 'partials/navigation.html' %}
+
+    <h1>SupportDesk Pro</h1>
+
+    <h2>Incident Management</h2>
+
+    <p>View and manage incidents submitted across the system.</p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+            <div class="{{ category }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endwith %}
+
+    {% if incidents %}
+
+        <table>
+
+            <thead>
+                <tr>
+                    <th>Reference</th>
+                    <th>Title</th>
+                    <th>Reporter</th>
+                    <th>Category</th>
+                    <th>Priority</th>
+                    <th>Status</th>
+                    <th>Assigned Technician</th>
+                    <th>Assignment</th>
+                    <th>Date Reported</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                {% for incident in incidents %}
+
+                    <tr>
+                        <td>{{ incident.incident_reference }}</td>
+
+                        <td>{{ incident.title }}</td>
+
+                        <td>{{ incident.reporter_name }}</td>
+
+                        <td>{{ incident.category_name }}</td>
+
+                        <td>{{ incident.priority }}</td>
+
+                        <td>{{ incident.status }}</td>
+
+                        <td>
+                            {{ incident.technician_name or "Unassigned" }}
+                        </td>
+
+                        <td>
+                            {% if incident.status == "Closed" %}
+
+                                <p>Incident closed</p>
+
+                            {% elif technicians %}
+
+                                <form
+                                    class="assignment-form"
+                                    method="POST"
+                                    action="{{ url_for(
+                                        'admin.assign_technician',
+                                        incident_id=incident.incident_id
+                                    ) }}"
+                                >
+
+                                    <input
+                                        type="hidden"
+                                        name="csrf_token"
+                                        value="{{ csrf_token() }}"
+                                    >
+
+                                    <select
+                                        name="technician_id"
+                                        required
+                                    >
+
+                                        <option value="">
+                                            Select technician
+                                        </option>
+
+                                        {% for technician in technicians %}
+
+                                            <option
+                                                value="{{ technician.user_id }}"
+                                                {% if technician.user_id == incident.technician_id %}
+                                                    selected
+                                                {% endif %}
+                                            >
+                                                {{ technician.full_name }}
+                                            </option>
+
+                                        {% endfor %}
+
+                                    </select>
+
+                                    <button type="submit">
+                                        {% if incident.technician_id %}
+                                            Reassign
+                                        {% else %}
+                                            Assign
+                                        {% endif %}
+                                    </button>
+
+                                </form>
+
+                            {% else %}
+
+                                <p>No active technicians available.</p>
+
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            {{ incident.created_at.strftime('%d %b %Y %H:%M') }}
+                        </td>
+                    </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    {% else %}
+
+        <p>No incidents have been submitted yet.</p>
+
+    {% endif %}
+
+    <p>
+        <a href="{{ url_for('dashboard.index') }}">
+            Return to Dashboard
+        </a>
+    </p>
+
+</body>
+</html>
+
+
+

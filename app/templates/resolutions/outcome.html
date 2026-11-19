@@ -1,0 +1,90 @@
+﻿
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Decision Submitted | SupportDesk Pro</title>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 30px 16px;
+            background: #f3f5f9;
+            color: #263238;
+            font-family: Arial, sans-serif;
+        }
+
+        .card {
+            max-width: 600px;
+            margin: 80px auto;
+            padding: 35px;
+            background: white;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 4px 18px rgba(0, 0, 0, 0.06);
+        }
+
+        h1 {
+            color: #174ea6;
+        }
+
+        p {
+            color: #64748b;
+            line-height: 1.7;
+        }
+
+        .reference {
+            margin: 22px 0;
+            padding: 15px;
+            background: #f4f6f9;
+            border-radius: 7px;
+            font-weight: bold;
+        }
+    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">`r`n</head>
+
+<body>
+
+<div class="card">
+
+    <h1>Decision Submitted Successfully</h1>
+
+    <p>
+        Thank you for reviewing the proposed resolution.
+        Your decision has been recorded in SupportDesk Pro.
+    </p>
+
+    <div class="reference">
+        Incident: {{ result.incident_reference }}
+    </div>
+
+    {% if result.decision == "Accepted" %}
+
+        <p>
+            You accepted the proposed resolution.
+            Your incident has now been marked as
+            <strong>Closed</strong>.
+        </p>
+
+    {% else %}
+
+        <p>
+            You rejected the proposed resolution.
+            Your incident has been reopened so that the
+            technician can continue investigating the issue.
+        </p>
+
+    {% endif %}
+
+    <p>
+        You may now close this page.
+    </p>
+
+</div>
+
+</body>
+</html>
+
+

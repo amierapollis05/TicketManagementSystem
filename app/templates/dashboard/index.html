@@ -1,0 +1,47 @@
+﻿
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ dashboard.title }} - SupportDesk Pro</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">`r`n</head>
+<body>
+    {% include 'partials/navigation.html' %}
+
+    <h1>SupportDesk Pro</h1>
+    <h2>{{ dashboard.title }}</h2>
+
+    <p>Welcome, {{ current_user.full_name }}.</p>
+    <p>Your account role: <strong>{{ current_user.role }}</strong></p>
+    <p>{{ dashboard.description }}</p>
+
+    {% if current_user.role == "User" %}
+        <hr>
+        <h3>Incident Management</h3>
+
+        <p>
+            <a href="{{ url_for('incident.create') }}">
+                <button type="button">Create New Incident</button>
+            </a>
+        </p>
+
+        <p>
+            <a href="{{ url_for('incident.my_incidents') }}">
+                <button type="button">View My Incidents</button>
+            </a>
+        </p>
+    {% endif %}
+
+    <hr>
+
+    <form method="POST" action="{{ url_for('auth.logout') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit">Sign Out</button>
+    </form>
+
+</body>
+</html>
+
+
+
